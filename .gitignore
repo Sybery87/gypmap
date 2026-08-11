@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+node_modules/
+*.log
+
+# yerel deneme dosyalari
+data.local.json
+_eski/
+
+# tek seferlik kurulum yardimcisi
+ilk-kurulum.sh
