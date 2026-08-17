@@ -207,11 +207,17 @@
     return compact ? 21 : 28;
   }
 
-  function makeIcon(kind, s) {
+  function makeIcon(kind, s, seed) {
     s = s || iconSize();
+    var html = G.GLYPHS[kind];
+    if (kind === "rig") {
+      // her kule biraz farkli fazda hareket etsin
+      var d = -((seed || 0) % 5) * 0.48;
+      html = html.replace('class="hoist"', 'class="hoist" style="animation-delay:' + d + 's"');
+    }
     return L.divIcon({
       className: "gyp-marker",
-      html: '<div class="chip">' + G.GLYPHS[kind] + "</div>",
+      html: '<div class="chip">' + html + "</div>",
       iconSize: [s, s],
       iconAnchor: [s / 2, s / 2],
       popupAnchor: [0, -(s / 2 + 4)],
@@ -225,7 +231,7 @@
     lastIconSize = s;
     markers.forEach(function (m) {
       var wasActive = m.marker.isPopupOpen && m.marker.isPopupOpen();
-      m.marker.setIcon(makeIcon(m.kindIcon, s));
+      m.marker.setIcon(makeIcon(m.kindIcon, s, m.seed));
       var el = m.marker.getElement();
       if (el) {
         el.title = m.label;
@@ -317,8 +323,8 @@
     var h =
       '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(s.name) +
       '</p><div class="pop-city">' + G.escapeHtml(s.city || "") + "</div></div>" +
-      '<div class="pop-body"><p class="sec-label">Tesis Türü</p>' +
-      '<p class="empty-note" style="font-style:normal;color:var(--steel)">Üretim Tesisi</p>';
+      '<div class="pop-body"><p class="sec-label">Tür</p>' +
+      '<p class="empty-note" style="font-style:normal;color:var(--steel)">Üretim Kuyusu</p>';
     if (s.address) {
       h += '<p class="sec-label" style="margin-top:10px">Adres</p>' +
         '<p class="pop-address">' + G.escapeHtml(s.address) + "</p>";
@@ -378,15 +384,15 @@
       });
     });
 
-    data.rigs.forEach(function (r) {
+    data.rigs.forEach(function (r, i) {
       var ll = L.latLng(r.lat, r.lon);
-      var mk = L.marker(ll, { icon: makeIcon("rig"), riseOnHover: true })
+      var mk = L.marker(ll, { icon: makeIcon("rig", null, i), riseOnHover: true })
         .addTo(markerLayer)
         .bindPopup(rigPopupHtml(r), { closeButton: true, autoPanPadding: [30, 30] })
         .bindTooltip(r.name, { permanent: true, direction: "right", offset: [17, 0], className: "gyp-label" });
       wireMarker(mk, ll, r.name);
       markers.push({
-        marker: mk, label: r.name, kind: "rig", kindIcon: "rig", cat: "rig",
+        marker: mk, label: r.name, kind: "rig", kindIcon: "rig", cat: "rig", seed: i,
         weight: r.employees && r.employees.length ? 50 : 10,
         latlng: ll,
       });
@@ -617,7 +623,7 @@
     { key: "rig", label: "Kuleler", glyph: "rig" },
     { key: "office", label: "Ofisler", glyph: "office" },
     { key: "workshop", label: "Kamplar", glyph: "workshop" },
-    { key: "production", label: "Üretim Tesisleri", glyph: "production" },
+    { key: "production", label: "Üretim Kuyuları", glyph: "production" },
   ];
   var ALL_SVG =
     '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +

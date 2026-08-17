@@ -160,9 +160,9 @@ h1.title {
 .chip .void { fill: #fff; transition: fill .15s ease; }
 .gyp-marker.is-active .chip .gl { fill: #fff; }
 .gyp-marker.is-active .chip .void { fill: #06205c; }
-.beam { animation: beam-rock 2.1s ease-in-out infinite alternate; transform: rotate(-8deg); transform-origin: 12.4px 5.6px; }
-@keyframes beam-rock { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
-@media (prefers-reduced-motion: reduce) { .beam { animation: none; } }
+.hoist { animation: hoist-move 2.4s ease-in-out infinite alternate; }
+@keyframes hoist-move { from { transform: translateY(0); } to { transform: translateY(5.4px); } }
+@media (prefers-reduced-motion: reduce) { .hoist { animation: none; } }
 
 .ghost-marker { background: none !important; border: none !important; }
 .ghost-dot {

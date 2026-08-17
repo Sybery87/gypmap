@@ -1,13 +1,13 @@
 # GYP Lokasyon Haritası
 
-Sondaj kulesi, üretim tesisi ve ofis/kamp lokasyonlarının uydu haritası üzerinde
+Sondaj kulesi, üretim kuyusu ve ofis/kamp lokasyonlarının uydu haritası üzerinde
 gösterildiği statik site. Sunucu, veritabanı yok — tüm veri `data.json` içinde.
 
 ## Yapı
 
 ```
 index.html               giris sayfasi
-data.json                tum veri (kuleler, tesisler, uretim sahalari)
+data.json                tum veri (kuleler, tesisler, uretim kuyulari)
 _headers                 cache + CORS (duzenleme paneli data.json'i cekebilsin diye)
 assets/app.js            harita
 assets/shared.js         ikonlar, tarih/kacis yardimcilari

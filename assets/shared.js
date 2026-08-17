@@ -5,14 +5,13 @@
   var GLYPHS = {
     rig:
       '<svg viewBox="0 0 24 20" width="20" height="17" aria-hidden="true">' +
-      '<rect class="gl" x="7" y="16.6" width="9.5" height="1.9" rx="0.6"/>' +
-      '<rect class="gl" x="7.3" y="10.5" width="1.3" height="6.2" rx="0.4"/>' +
-      '<path class="gl" d="M10.2,16.6 L14.6,16.6 L15.1,5.6 L9.7,5.6 Z"/>' +
-      '<g class="beam">' +
-      '<rect class="gl" x="1.4" y="4.6" width="21.4" height="2" rx="1"/>' +
-      '<path class="gl" d="M1.6,5.6 C-0.2,5.6 -0.6,3.6 0.7,2.6 C2,1.6 3.5,2.6 3.5,4.3 L3.5,5.6 Z"/>' +
-      '<circle class="gl" cx="20.6" cy="5.6" r="2.7"/>' +
-      "</g></svg>",
+      '<rect class="gl" x="5.4" y="17.2" width="13.2" height="2" rx="0.8"/>' +
+      '<path class="gl" d="M8.6,17.2 L10.2,4.6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+      '<path class="gl" d="M15.4,17.2 L13.8,4.6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+      '<path class="gl" d="M9.3,11.6 L14.7,11.6" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+      '<rect class="gl" x="9.2" y="2.6" width="5.6" height="2.1" rx="0.9"/>' +
+      '<g class="hoist"><rect class="gl" x="10.5" y="6" width="3" height="2.4" rx="0.8"/></g>' +
+      "</svg>",
     office:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
       '<rect class="gl" x="2.4" y="7" width="7.4" height="11.4" rx="1.3"/>' +
