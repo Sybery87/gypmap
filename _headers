@@ -1,16 +1,8 @@
-.DS_Store
-Thumbs.db
-desktop.ini
-*.swp
-*~
-.vscode/
-.idea/
-node_modules/
-*.log
+/data.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=0, must-revalidate
 
-# yerel deneme dosyalari
-data.local.json
-_eski/
-
-# tek seferlik kurulum yardimcisi
-ilk-kurulum.sh
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -317,8 +317,8 @@
     var h =
       '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(s.name) +
       '</p><div class="pop-city">' + G.escapeHtml(s.city || "") + "</div></div>" +
-      '<div class="pop-body"><p class="sec-label">Tür</p>' +
-      '<p class="empty-note" style="font-style:normal;color:var(--steel)">Üretim Kuyusu</p>';
+      '<div class="pop-body"><p class="sec-label">Tesis Türü</p>' +
+      '<p class="empty-note" style="font-style:normal;color:var(--steel)">Üretim Tesisi</p>';
     if (s.address) {
       h += '<p class="sec-label" style="margin-top:10px">Adres</p>' +
         '<p class="pop-address">' + G.escapeHtml(s.address) + "</p>";
@@ -617,7 +617,7 @@
     { key: "rig", label: "Kuleler", glyph: "rig" },
     { key: "office", label: "Ofisler", glyph: "office" },
     { key: "workshop", label: "Kamplar", glyph: "workshop" },
-    { key: "production", label: "Üretim Kuyuları", glyph: "production" },
+    { key: "production", label: "Üretim Tesisleri", glyph: "production" },
   ];
   var ALL_SVG =
     '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
