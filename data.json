@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07",
+  "updatedAt": "2026-08-17",
   "facilities": [
     {
       "id": "fac-merkez",
@@ -292,6 +292,13 @@
       "city": "Diyarbakır",
       "lat": 38.03967609087989,
       "lon": 40.07923344794637
+    },
+    {
+      "id": "prod-yaprakli-6",
+      "name": "Yapraklı-6",
+      "city": "Adıyaman",
+      "lat": 37.834581,
+      "lon": 38.855772
     },
     {
       "id": "prod-zeynel-10",
