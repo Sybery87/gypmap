@@ -213,7 +213,7 @@
     if (kind === "rig") {
       // her kule biraz farkli fazda hareket etsin
       var d = -((seed || 0) % 5) * 0.48;
-      html = html.replace('class="hoist"', 'class="hoist" style="animation-delay:' + d + 's"');
+      html = html.replace('class="pj"', 'class="pj" style="animation-delay:' + d + 's"');
     }
     return L.divIcon({
       className: "gyp-marker",

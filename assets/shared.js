@@ -5,13 +5,13 @@
   var GLYPHS = {
     rig:
       '<svg viewBox="0 0 24 20" width="20" height="17" aria-hidden="true">' +
-      '<rect class="gl" x="5.4" y="17.2" width="13.2" height="2" rx="0.8"/>' +
-      '<path class="gl" d="M8.6,17.2 L10.2,4.6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
-      '<path class="gl" d="M15.4,17.2 L13.8,4.6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
-      '<path class="gl" d="M9.3,11.6 L14.7,11.6" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
-      '<rect class="gl" x="9.2" y="2.6" width="5.6" height="2.1" rx="0.9"/>' +
-      '<g class="hoist"><rect class="gl" x="10.5" y="6" width="3" height="2.4" rx="0.8"/></g>' +
-      "</svg>",
+      '<rect class="gl" x="2.4" y="16.6" width="19.2" height="1.9" rx="0.75"/>' +
+      '<path class="gl" d="M8.4,16.6 L12.2,7.4 L16,16.6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>' +
+      '<g class="pj">' +
+      '<rect class="gl" x="2.6" y="6.5" width="19" height="1.9" rx="0.95"/>' +
+      '<path class="gl" d="M3,7.45 L3,4.9 A2.5,2.5 0 0,0 0.9,8.4 L3,8.4 Z"/>' +
+      '<circle class="gl" cx="19.6" cy="7.45" r="2.8"/>' +
+      "</g></svg>",
     office:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
       '<rect class="gl" x="2.4" y="7" width="7.4" height="11.4" rx="1.3"/>' +
