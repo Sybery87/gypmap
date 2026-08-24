@@ -810,24 +810,24 @@
       var id = v.plate || String(v.muId);
       seen[id] = true;
       var ll = L.latLng(v.latitude, v.longitude);
-      var mk = vehicleMarkers[id];
-      if (mk) {
-        mk.setLatLng(ll);
-        mk.setIcon(vehicleIcon(v));
-        mk.setPopupContent(vehiclePopupHtml(v));
+      var rec = vehicleMarkers[id];
+      if (rec) {
+        rec.data = v;
+        rec.marker.setLatLng(ll);
+        rec.marker.setIcon(vehicleIcon(v));
+        rec.marker.setPopupContent(vehiclePopupHtml(v));
       } else {
-        mk = L.marker(ll, { icon: vehicleIcon(v), riseOnHover: true, zIndexOffset: 400 })
+        var mk = L.marker(ll, { icon: vehicleIcon(v), riseOnHover: true, zIndexOffset: 400 })
           .bindPopup(vehiclePopupHtml(v), { closeButton: true, autoPanPadding: [30, 30] })
           .bindTooltip(id, { permanent: false, direction: "top", className: "gyp-label" });
-        mk.addTo(vehicleLayer);
-        vehicleMarkers[id] = mk;
+        vehicleMarkers[id] = { marker: mk, data: v };
       }
     });
 
     // artik gelmeyen araclari kaldir
     Object.keys(vehicleMarkers).forEach(function (id) {
       if (!seen[id]) {
-        vehicleLayer.removeLayer(vehicleMarkers[id]);
+        vehicleLayer.removeLayer(vehicleMarkers[id].marker);
         delete vehicleMarkers[id];
       }
     });
@@ -839,6 +839,7 @@
       return Number.isFinite(v.latitude) && Number.isFinite(v.longitude);
     });
     updateSummary(lastVehicles);
+    applyStatusFilter();
     if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
   }
 
@@ -965,28 +966,70 @@
       : "";
   }
 
-  /* ---------- durum ozeti ---------- */
+  /* ---------- durum ozeti (tiklanabilir alt filtre) ---------- */
+  var statusFilter = null;   // null | "hareket" | "rolanti" | "duran" | "eski"
+
+  function vehicleStatus(v) {
+    if (ageMs(v) > STALE_MS) return "eski";
+    if (isMoving(v)) return "hareket";
+    if (v.idleSpeed === "A") return "rolanti";
+    return "duran";
+  }
+
+  function statusMatches(v) {
+    return !statusFilter || vehicleStatus(v) === statusFilter;
+  }
+
   function updateSummary(list) {
     var el = document.getElementById("veh-summary");
     if (!el) return;
-    if (!active.vehicle || !list.length) { el.style.display = "none"; return; }
-    var hareket = 0, rolanti = 0, duran = 0, eski = 0;
-    list.forEach(function (v) {
-      if (ageMs(v) > STALE_MS) { eski++; return; }
-      if (isMoving(v)) hareket++;
-      else if (v.idleSpeed === "A") rolanti++;
-      else duran++;
-    });
+    if (!active.vehicle || !list.length) {
+      el.style.display = "none";
+      statusFilter = null;
+      return;
+    }
+    var say = { hareket: 0, rolanti: 0, duran: 0, eski: 0 };
+    list.forEach(function (v) { say[vehicleStatus(v)]++; });
+
+    // secili durumda hic arac kalmadiysa filtreyi birak
+    if (statusFilter && !say[statusFilter]) statusFilter = null;
+
     el.style.display = "flex";
     el.innerHTML =
-      pill("hareket", hareket, "Hareket halinde") +
-      pill("rolanti", rolanti, "Rölantide") +
-      pill("duran", duran, "Duruyor") +
-      (eski ? pill("eski", eski, "Veri eski") : "");
+      pill("hareket", say.hareket, "Hareket halinde") +
+      pill("rolanti", say.rolanti, "Rölantide") +
+      pill("duran", say.duran, "Duruyor") +
+      (say.eski ? pill("eski", say.eski, "Veri eski") : "");
   }
 
   function pill(cls, n, label) {
-    return '<span class="vs-pill ' + cls + '"><b>' + n + "</b>" + label + "</span>";
+    var on = statusFilter === cls;
+    return (
+      '<button type="button" class="vs-pill ' + cls + (on ? " on" : "") +
+      (n ? "" : " empty") + '" data-st="' + cls + '"' + (n ? "" : " disabled") +
+      ' aria-pressed="' + (on ? "true" : "false") + '">' +
+      "<b>" + n + "</b>" + label + "</button>"
+    );
+  }
+
+  function setStatusFilter(st) {
+    statusFilter = statusFilter === st ? null : st;
+    applyStatusFilter();
+    updateSummary(lastVehicles);
+    if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
+  }
+
+  // haritadaki isaretcileri duruma gore goster/gizle
+  function applyStatusFilter() {
+    if (!vehicleLayer) return;
+    Object.keys(vehicleMarkers).forEach(function (id) {
+      var rec = vehicleMarkers[id];
+      var goster = statusMatches(rec.data);
+      var ekli = vehicleLayer.hasLayer(rec.marker);
+      if (goster && !ekli) rec.marker.addTo(vehicleLayer);
+      else if (!goster && ekli) vehicleLayer.removeLayer(rec.marker);
+    });
+    declutter();
   }
 
   /* ---------- arac listesi paneli ---------- */
@@ -998,6 +1041,7 @@
     var q = (document.getElementById("veh-search").value || "").trim().toLocaleLowerCase("tr");
     var rows = lastVehicles
       .filter(function (v) {
+        if (!statusMatches(v)) return false;
         if (!q) return true;
         return (
           (v.plate || "").toLocaleLowerCase("tr").indexOf(q) !== -1 ||
@@ -1011,15 +1055,16 @@
       });
 
     if (!rows.length) {
-      host.innerHTML = '<p class="veh-empty">Kayıt yok</p>';
+      host.innerHTML =
+        '<p class="veh-empty">' +
+        (statusFilter ? "Bu durumda araç yok" : "Kayıt yok") + "</p>";
       return;
     }
 
     host.innerHTML = rows
       .map(function (v) {
         var sl = siteLabel(v.latitude, v.longitude);
-        var stale = ageMs(v) > STALE_MS;
-        var durum = stale ? "eski" : isMoving(v) ? "hareket" : v.idleSpeed === "A" ? "rolanti" : "duran";
+        var durum = vehicleStatus(v);
         return (
           '<button type="button" class="veh-row" data-plate="' + G.escapeHtml(v.plate || "") + '">' +
           '<span class="veh-dot ' + durum + '"></span>' +
@@ -1033,10 +1078,17 @@
   }
 
   function focusVehicle(plate) {
-    var mk = vehicleMarkers[plate];
-    if (!mk) return;
-    map.flyTo(mk.getLatLng(), Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
-    setTimeout(function () { mk.openPopup(); }, 850);
+    var rec = vehicleMarkers[plate];
+    if (!rec) return;
+    // durum filtresi yuzunden gizliyse once gorunur yap
+    if (!vehicleLayer.hasLayer(rec.marker)) {
+      statusFilter = null;
+      applyStatusFilter();
+      updateSummary(lastVehicles);
+      renderVehicleList();
+    }
+    map.flyTo(rec.marker.getLatLng(), Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
+    setTimeout(function () { rec.marker.openPopup(); }, 850);
   }
 
   function toggleVehiclePanel(force) {
@@ -1063,6 +1115,14 @@
 
     var btn = document.getElementById("veh-panel-btn");
     if (btn) btn.addEventListener("click", function () { toggleVehiclePanel(); });
+
+    var sum = document.getElementById("veh-summary");
+    if (sum) {
+      sum.addEventListener("click", function (e) {
+        var b = e.target.closest(".vs-pill");
+        if (b && !b.disabled) setStatusFilter(b.dataset.st);
+      });
+    }
 
     var close = document.getElementById("veh-panel-close");
     if (close) close.addEventListener("click", function () { toggleVehiclePanel(false); });
@@ -1216,6 +1276,7 @@
       clearTrack();
       toggleVehiclePanel(false);
       lastVehicles = [];
+      statusFilter = null;
       updateSummary([]);
     }
 

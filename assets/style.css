@@ -443,13 +443,20 @@ h1.title {
 
 .veh-summary {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1050;
-  display: flex; gap: 7px; pointer-events: none;
+  display: flex; gap: 7px;
 }
 .vs-pill {
   background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
   padding: 5px 12px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--steel);
   display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  cursor: pointer; transition: border-color .15s ease, background .15s ease, opacity .15s ease;
 }
+.vs-pill:hover:not(:disabled) { border-color: var(--accent); }
+.vs-pill.on { border-color: var(--accent); background: var(--bg-soft); box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(0,0,0,.3); }
+.vs-pill.on::after {
+  content: "×"; margin-left: 2px; font-size: 13px; line-height: 1; color: var(--steel);
+}
+.vs-pill.empty, .vs-pill:disabled { opacity: .42; cursor: default; }
 .vs-pill b { font-family: 'Manrope', sans-serif; font-size: 13px; color: var(--ink-deep); }
 .vs-pill.hareket b { color: #2ecc71; }
 .vs-pill.rolanti b { color: #e8a33d; }
@@ -457,7 +464,7 @@ h1.title {
 
 .veh-panel-btn {
   /* katman secici sag ustte duruyor; buton onun altina alindi */
-  position: absolute; top: 62px; right: 12px; z-index: 1050;
+  position: absolute; top: 96px; right: 12px; z-index: 1050;
   display: flex; align-items: center; gap: 7px; cursor: pointer;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
   padding: 8px 13px; color: var(--ink-deep);
@@ -534,7 +541,7 @@ h1.title {
   .veh-summary { gap: 5px; top: 8px; flex-wrap: wrap; justify-content: center; width: calc(100% - 20px); }
   .vs-pill { font-size: 10px; padding: 4px 9px; }
   .vs-pill b { font-size: 11.5px; }
-  .veh-panel-btn { top: 52px; right: 8px; font-size: 11px; padding: 6px 10px; }
+  .veh-panel-btn { top: 84px; right: 8px; font-size: 11px; padding: 6px 10px; }
   .timeline { bottom: 70px; gap: 8px; padding: 8px 10px; }
   .tl-title { display: none; }
   .tl-time { font-size: 10px; min-width: 84px; }
