@@ -1,89 +1,115 @@
-<!DOCTYPE html>
-<html lang="tr" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GYP Lokasyon Haritası</title>
-<meta name="description" content="Güney Yıldızı Petrol — sondaj kulesi lokasyonları ve saha personeli takip haritası.">
-<link rel="icon" type="image/png" sizes="512x512" href="assets/favicon.png">
-<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-<div class="app">
+# GYP Lokasyon Haritası
 
-  <header class="hdr">
-    <div class="brand">
-      <div class="logo-wrap">
-        <img class="logo" src="assets/logo.png" alt="Güney Yıldızı Petrol">
-      </div>
-      <div class="vdiv"></div>
-      <div>
-        <p class="company">GÜNEY YILDIZI PETROL</p>
-        <h1 class="title">Lokasyon Haritası</h1>
-      </div>
-    </div>
+Sondaj kulesi, üretim kuyusu ve ofis/kamp lokasyonlarının uydu haritası üzerinde
+gösterildiği statik site. Sunucu, veritabanı yok — tüm veri `data.json` içinde.
 
-    <div class="hdr-right">
-      <div class="stats">
-        <div><b id="stat-rigs">—</b>Aktif Kule</div>
-        <div><b id="stat-sites">—</b>Üretim Kuyusu</div>
-        <div><b id="stat-people">—</b>Saha Personeli</div>
-      </div>
-      <button class="iconbtn" id="theme-btn" type="button" aria-label="Temayı değiştir" title="Gece / gündüz">
-        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
-      </button>
-    </div>
-  </header>
+## Yapı
 
-  <div id="load-error" style="display:none;padding:14px 26px;background:#4a1d1d;color:#ffd9d4;font-size:13px"></div>
+```
+index.html               giris sayfasi
+data.json                tum veri (kuleler, tesisler, uretim kuyulari)
+_headers                 cache + CORS (duzenleme paneli data.json'i cekebilsin diye)
+assets/app.js            harita
+assets/shared.js         ikonlar, tarih/kacis yardimcilari
+assets/style.css         stil
+assets/turkey-border.js  ulke sinir poligonu (Natural Earth 10m, sadelestirilmis)
+assets/config.js         arac servisi adresi (gizli bilgi icermez)
+```
 
-  <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
+Düzenleme paneli (`admin.html`) bu repoda yok — bilerek. Yayına çıkarsa herkes
+görür. Panel ayrı klasörde, lokalde çalışıyor.
 
-  <div id="map">
-    <div id="veh-status" class="veh-status" style="display:none"></div>
-    <div id="veh-summary" class="veh-summary" style="display:none"></div>
+## Yayına alma
 
-    <button type="button" id="veh-panel-btn" class="veh-panel-btn" style="display:none"
-            aria-label="Araç listesi">
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span>Araç Listesi</span>
-    </button>
+Statik dosyalar, herhangi bir host çalışır. Şu an Cloudflare Pages / GitHub Pages.
 
-    <aside id="veh-panel" class="veh-panel" aria-label="Araç listesi">
-      <div class="veh-panel-head">
-        <strong>Araçlar</strong>
-        <button type="button" id="veh-panel-close" aria-label="Kapat">&times;</button>
-      </div>
-      <input id="veh-search" class="veh-search" type="search" placeholder="Plaka ara…"
-             autocomplete="off">
-      <div id="veh-list" class="veh-list"></div>
-    </aside>
+`file://` ile açmayın — `data.json` fetch'i CORS'a takılır, harita boş gelir.
+Lokal test:
 
-    <div id="timeline" class="timeline" style="display:none">
-      <span class="tl-title"></span>
-      <input class="tl-range" type="range" min="0" max="1" value="1" aria-label="Zaman">
-      <span class="tl-time"></span>
-      <button type="button" class="tl-close" aria-label="İzi kapat">&times;</button>
-    </div>
-  </div>
+```
+python3 -m http.server 8000
+```
 
-  <footer class="ftr">
-    <span>Görüntüleme modu — bu harita bilgilendirme amaçlıdır.</span>
-    <span>Son güncelleme: <span id="updated-at">—</span> &nbsp;·&nbsp; Sınır verisi: Natural Earth 1:10m &nbsp;·&nbsp; <span class="credit">Made by <strong>Emre SABERİ</strong></span></span>
-  </footer>
+## Veri
 
-</div>
+`data.json` üç liste tutuyor: `rigs`, `facilities`, `productionSites`.
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/turkey-border.js"></script>
-<script src="assets/config.js"></script>
-<script src="assets/shared.js"></script>
-<script src="assets/app.js"></script>
-</body>
-</html>
+```json
+{
+  "id": "rig-7",
+  "name": "Rig#7",
+  "city": "Adıyaman",
+  "note": "Yapraklı-7",
+  "lat": 37.82231,
+  "lon": 38.81297,
+  "since": "2026-08-01",
+  "employees": [],
+  "previous": null
+}
+```
+
+- `facilities.type`: `office` | `workshop`
+- `previous` doluysa harita üzerinde soluk/kesik çizgiyle eski konum gösterilir
+- tarihler `YYYY-AA-GG`, koordinatlar ondalık derece
+
+Kule taşındığında panelde "Taşındı olarak kaydet" — mevcut kayıt `previous`'a
+düşer, yeni konum girilir.
+
+## Notlar
+
+- Gece katmanı NASA GIBS VIIRS (2012), z8'de bitiyor. z9'dan sonra Esri'ye geçip
+  CSS filtreyle gece tonuna boyuyoruz.
+- Esri bazı kırsal alanlarda "veri yok" karosunu HTTP 200 ile döndürüyor, bu yüzden
+  `tileerror` işe yaramıyor. `tilemap` servisini sorgulayıp bölgesel zoom tavanını
+  buluyoruz (bkz. `deepestZoom`).
+- Sınır poligonu Boğaz'ı kara dışında bıraktığı için Sarıyer'deki ofis maskeleniyordu;
+  poligonu ~2 km dışa buffer'ladım.
+- Uydu görüntüsü kaynak yazısı (attribution) sağ altta kalmalı, servislerin şartı.
+
+## Araç takibi
+
+"Araçlar" filtresi açıldığında konumlar ayrı bir servisten çekilir
+(`arac-servisi` klasörü). Adres `assets/config.js` içinde; token orada değil,
+servisin arkasında.
+
+- Yalnızca filtre açıkken sorgulanır, kapalıyken kota harcanmaz
+- 2 dakikada bir yenilenir, sekme arka plandayken durur
+- 30 dakikadan eski veri gönderen araç soluk gösterilir
+- Servis çalışmazsa harita normal çalışmaya devam eder, üstte uyarı çıkar
+- Sürücü adı/kimlik bilgisi servisten geçmez, popup'ta yalnızca plaka + durum var
+
+### Saha eşleştirme
+
+Aracın en yakın kule/kuyu/tesise uzaklığı tarayıcıda hesaplanır (haversine).
+1 km altı "sahasında", 6 km altı "yakınında", üstü "en yakın: X".
+Eşikler `SAHADA_KM` / `YAKIN_KM` sabitlerinde. Sunucu gerekmez.
+
+### Araç listesi
+
+Sağdaki panel: plakaya göre arama, duruma göre sıralama (hareketliler üstte),
+tıklayınca haritada o araca odaklanır. Yalnızca "Araçlar" filtresi açıkken görünür.
+
+### Geçmiş iz
+
+Araç balonundaki "Son 6 saat izi" `/locations` ucunu çağırır, rotayı çizer ve
+altta bir zaman kaydırıcısı açar. Kaydırıcı aracın o andaki konumunu gösterir.
+
+Sağlayıcı tarih formatı katı: `yyyy-MM-dd'T'HH:mm:ssZ`, `+` escape edilmeli.
+`apiTime()` bunu üretir, `URLSearchParams` escape'i halleder.
+
+### Katmanlama notu
+
+Panel ve zaman çizelgesi `z-index: 1100` kullanıyor. Leaflet kontrolleri
+800-1000 arasında; daha düşük değerde kalınca butonlar tıklanamıyordu.
+
+`config.js` boş bırakılırsa filtre çalışır ama veri çekmez.
+
+## Yapılacaklar
+
+- [ ] Kule personel listeleri girilecek (şu an hepsi boş)
+- [ ] Diyarbakır kamp koordinatı sahadan teyit edilecek
+- [ ] N47-b4-1 aslında ruhsat sahası (14x7 km), nokta yerine poligon çizilebilir
+- [ ] **Erişim kısıtlaması** — araç konumu çalışan konumu demek, site hâlâ herkese açık
+- [ ] Kule/kuyu koordinatlarını sağlayıcıya alan olarak yükleme (yazma yetkisi gerekir,
+      servis şu an salt okunur)
+- [ ] Saha ziyaret raporu — yukarıdaki adım tamamlanınca

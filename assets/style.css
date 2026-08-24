@@ -147,7 +147,7 @@ h1.title {
 .chip.vehicle.stale { opacity: .48; }
 .chip.vehicle.stale .gl { fill: #7c879b; }
 .veh-status {
-  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 700;
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1060;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
   padding: 7px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
   color: var(--steel); box-shadow: 0 6px 20px rgba(0, 0, 0, .3); pointer-events: none;
@@ -395,3 +395,120 @@ h1.title {
   .filter-icon { width: 20px; height: 20px; border-radius: 6px; }
   .filter-count { font-size: 9.5px; padding: 1px 5px; min-width: 18px; }
   }
+
+/* ---------- arac: saha etiketi, ozet, liste, zaman cizelgesi ---------- */
+.pop-site {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 9px 15px; border-bottom: 1px solid var(--line); background: var(--bg-soft);
+  font-size: 12.5px; color: var(--steel);
+}
+.pop-site b { color: var(--ink-deep); font-weight: 600; }
+.pop-site span { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+.pop-site.at b { color: var(--accent); }
+
+.pop-foot-2 { padding: 0 15px 10px; }
+.trk-btn {
+  width: 100%; padding: 8px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink-deep);
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
+}
+.trk-btn:hover { border-color: var(--accent); }
+
+.veh-summary {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1050;
+  display: flex; gap: 7px; pointer-events: none;
+}
+.vs-pill {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+  padding: 5px 12px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--steel);
+  display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+.vs-pill b { font-family: 'Manrope', sans-serif; font-size: 13px; color: var(--ink-deep); }
+.vs-pill.hareket b { color: #2ecc71; }
+.vs-pill.rolanti b { color: #e8a33d; }
+.vs-pill.eski b { color: #c0392b; }
+
+.veh-panel-btn {
+  /* katman secici sag ustte duruyor; buton onun altina alindi */
+  position: absolute; top: 62px; right: 12px; z-index: 1050;
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 13px; color: var(--ink-deep);
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+.veh-panel-btn:hover { border-color: var(--accent); }
+.veh-panel-btn.on { border-color: var(--accent); color: var(--accent); }
+
+.veh-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 288px; z-index: 1100;
+  background: var(--panel); border-left: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .22s ease;
+  box-shadow: -8px 0 28px rgba(0,0,0,.32);
+}
+.veh-panel.open { transform: translateX(0); }
+.veh-panel-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 15px; border-bottom: 1px solid var(--line);
+  font-family: 'Manrope', sans-serif; font-size: 14px; color: var(--ink-deep);
+}
+.veh-panel-head button {
+  background: none; border: none; color: var(--steel); font-size: 20px;
+  cursor: pointer; line-height: 1; padding: 0 4px;
+}
+.veh-panel-head button:hover { color: var(--ink-deep); }
+.veh-search {
+  margin: 12px 15px; padding: 8px 11px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--bg-soft); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 12.5px; outline: none;
+}
+.veh-search:focus { border-color: var(--accent); }
+.veh-list { flex: 1; overflow-y: auto; padding: 0 10px 14px; }
+.veh-row {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 9px 8px; border: none; border-radius: 8px; background: none; cursor: pointer;
+  color: var(--text); font-family: 'Inter', sans-serif;
+}
+.veh-row:hover { background: var(--bg-soft); }
+.veh-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--steel-soft); }
+.veh-dot.hareket { background: #2ecc71; }
+.veh-dot.rolanti { background: #e8a33d; }
+.veh-dot.eski { background: #c0392b; }
+.veh-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.veh-main b { font-size: 12.5px; font-weight: 600; }
+.veh-main em {
+  font-style: normal; font-size: 10.5px; color: var(--steel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.veh-speed { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--steel); flex: none; }
+.veh-empty { padding: 18px 8px; font-size: 12px; color: var(--steel-soft); font-style: italic; }
+
+.timeline {
+  position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); z-index: 1100;
+  display: flex; align-items: center; gap: 12px; width: min(560px, calc(100% - 40px));
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; box-shadow: 0 8px 26px rgba(0,0,0,.4);
+}
+.tl-title { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-deep); white-space: nowrap; }
+.tl-range { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.tl-time {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--steel);
+  white-space: nowrap; min-width: 96px; text-align: right;
+}
+.tl-close {
+  background: none; border: none; color: var(--steel); font-size: 19px;
+  cursor: pointer; line-height: 1; padding: 0 2px;
+}
+.tl-close:hover { color: var(--ink-deep); }
+
+@media (max-width: 760px) {
+  .veh-panel { width: 100%; }
+  .veh-summary { gap: 5px; top: 8px; flex-wrap: wrap; justify-content: center; width: calc(100% - 20px); }
+  .vs-pill { font-size: 10px; padding: 4px 9px; }
+  .vs-pill b { font-size: 11.5px; }
+  .veh-panel-btn { top: 52px; right: 8px; font-size: 11px; padding: 6px 10px; }
+  .timeline { bottom: 70px; gap: 8px; padding: 8px 10px; }
+  .tl-title { display: none; }
+  .tl-time { font-size: 10px; min-width: 84px; }
+}

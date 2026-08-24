@@ -663,14 +663,74 @@
     });
   }
 
+  /* ---------- saha eslestirme ----------
+     Aracin en yakin kule/kuyu/tesise uzakligi. Sunucu gerekmez;
+     koordinatlar zaten elimizde. */
+  var SAHADA_KM = 1.0;    // bu mesafenin altinda "sahada" sayilir
+  var YAKIN_KM = 6.0;     // bu mesafenin altinda "yakininda"
+
+  function haversine(aLat, aLon, bLat, bLon) {
+    var R = 6371;
+    var dLat = ((bLat - aLat) * Math.PI) / 180;
+    var dLon = ((bLon - aLon) * Math.PI) / 180;
+    var la1 = (aLat * Math.PI) / 180;
+    var la2 = (bLat * Math.PI) / 180;
+    var h =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  function allSites() {
+    if (!data) return [];
+    var out = [];
+    (data.rigs || []).forEach(function (r) {
+      out.push({ name: r.name, kind: "Kule", lat: r.lat, lon: r.lon });
+    });
+    (data.facilities || []).forEach(function (f) {
+      out.push({ name: f.name, kind: f.type === "workshop" ? "Kamp" : "Ofis", lat: f.lat, lon: f.lon });
+    });
+    (data.productionSites || []).forEach(function (s) {
+      out.push({ name: s.name, kind: "Üretim kuyusu", lat: s.lat, lon: s.lon });
+    });
+    return out;
+  }
+
+  function nearestSite(lat, lon) {
+    var best = null;
+    allSites().forEach(function (s) {
+      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon)) return;
+      var km = haversine(lat, lon, s.lat, s.lon);
+      if (!best || km < best.km) best = { site: s, km: km };
+    });
+    return best;
+  }
+
+  function siteLabel(lat, lon) {
+    var n = nearestSite(lat, lon);
+    if (!n) return null;
+    var mesafe = n.km < 1 ? Math.round(n.km * 1000) + " m" : n.km.toFixed(1) + " km";
+    if (n.km <= SAHADA_KM) return { text: n.site.name + " sahasında", detail: mesafe, near: true };
+    if (n.km <= YAKIN_KM) return { text: n.site.name + " yakınında", detail: mesafe, near: false };
+    return { text: "En yakın: " + n.site.name, detail: mesafe, near: false };
+  }
+
   function vehiclePopupHtml(v) {
     var age = ageMs(v);
     var stale = age > STALE_MS;
+    var sl = siteLabel(v.latitude, v.longitude);
     var h =
       '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(v.plate || "Araç") + "</p>" +
       '<div class="pop-city">' +
       G.escapeHtml([v.city, v.town].filter(Boolean).join(" / ") || "Konum bilgisi yok") +
       "</div></div>";
+
+    if (sl) {
+      h +=
+        '<div class="pop-site' + (sl.near ? " at" : "") + '">' +
+        "<b>" + G.escapeHtml(sl.text) + "</b><span>" + sl.detail + "</span></div>";
+    }
+
     h += '<div class="pop-body"><p class="sec-label">Durum</p><ul class="emp-list">';
     h += row("Hareket", isMoving(v) ? Math.round(v.speed) + " km/sa" : "Duruyor");
     if (v.ignition) h += row("Kontak", v.ignition === "A" ? "Açık" : "Kapalı");
@@ -681,6 +741,14 @@
       '<div class="pop-since"' + (stale ? ' style="color:#c0392b"' : "") + ">" +
       (Number.isFinite(age) ? "Son veri: " + humanAge(age) : "Son veri zamanı bilinmiyor") +
       "</div>";
+
+    h += '<div class="pop-foot pop-foot-2">';
+    if (v.muId) {
+      h +=
+        '<button type="button" class="trk-btn" data-mu="' + v.muId +
+        '" data-plate="' + G.escapeHtml(v.plate || "") + '">Son 6 saat izi</button>';
+    }
+    h += "</div>";
     return h + dirButton(v.latitude, v.longitude, v.plate || "Araç");
   }
 
@@ -766,6 +834,12 @@
 
     var el = document.getElementById("cnt-vehicle");
     if (el) el.textContent = Object.keys(vehicleMarkers).length;
+
+    lastVehicles = list.filter(function (v) {
+      return Number.isFinite(v.latitude) && Number.isFinite(v.longitude);
+    });
+    updateSummary(lastVehicles);
+    if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
   }
 
   function startVehiclePolling() {
@@ -780,6 +854,234 @@
   function stopVehiclePolling() {
     if (vehicleTimer) clearInterval(vehicleTimer);
     vehicleTimer = null;
+  }
+
+  /* ---------- gecmis iz + zaman cizelgesi ---------- */
+  var trackLayer = null;
+  var trackPoints = [];
+  var trackDot = null;
+
+  // saglayici "yyyy-MM-dd'T'HH:mm:ssZ" bekliyor, + escape edilmeli.
+  // URLSearchParams zaten %2B'ye cevirir.
+  function apiTime(d) {
+    var p = function (n, w) { return String(n).padStart(w || 2, "0"); };
+    var off = -d.getTimezoneOffset();
+    var sign = off >= 0 ? "+" : "-";
+    off = Math.abs(off);
+    return (
+      d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" +
+      p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()) +
+      sign + p(Math.floor(off / 60)) + p(off % 60)
+    );
+  }
+
+  function clearTrack() {
+    if (trackLayer) map.removeLayer(trackLayer);
+    trackLayer = null;
+    trackDot = null;
+    trackPoints = [];
+    var el = document.getElementById("timeline");
+    if (el) el.style.display = "none";
+  }
+
+  function loadTrack(muId, plate, hours) {
+    var base = vehicleServiceUrl();
+    if (!base) return;
+    hours = hours || 6;
+    var end = new Date();
+    var start = new Date(Date.now() - hours * 3600000);
+    var qs = new URLSearchParams({
+      muId: String(muId),
+      startTime: apiTime(start),
+      endTime: apiTime(end),
+    });
+
+    setVehicleStatus("İz yükleniyor…");
+    fetch(base + "/locations?" + qs.toString(), { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        var pts = (j && Array.isArray(j.data) ? j.data : [])
+          .filter(function (p) { return Number.isFinite(p.latitude) && Number.isFinite(p.longitude); })
+          .map(function (p) { return { lat: p.latitude, lon: p.longitude, t: Date.parse(p.time) }; })
+          .sort(function (a, b) { return a.t - b.t; });
+
+        if (pts.length < 2) {
+          setVehicleStatus("Bu aralıkta iz verisi yok", "warn");
+          setTimeout(function () { setVehicleStatus(""); }, 3000);
+          return;
+        }
+        drawTrack(pts, plate, hours);
+        setVehicleStatus("");
+      })
+      .catch(function (e) {
+        setVehicleStatus("İz alınamadı (" + e.message + ")", "warn");
+      });
+  }
+
+  function drawTrack(pts, plate, hours) {
+    clearTrack();
+    trackPoints = pts;
+    trackLayer = L.layerGroup().addTo(map);
+
+    var latlngs = pts.map(function (p) { return [p.lat, p.lon]; });
+    L.polyline(latlngs, { color: "#ffffff", weight: 4, opacity: 0.35 }).addTo(trackLayer);
+    L.polyline(latlngs, { color: "#4fa6f0", weight: 2.2, opacity: 0.95 }).addTo(trackLayer);
+
+    L.circleMarker(latlngs[0], {
+      radius: 5, color: "#fff", weight: 2, fillColor: "#2ecc71", fillOpacity: 1,
+    }).addTo(trackLayer).bindTooltip("Başlangıç", { direction: "top" });
+
+    trackDot = L.circleMarker(latlngs[latlngs.length - 1], {
+      radius: 6, color: "#fff", weight: 2, fillColor: "#4fa6f0", fillOpacity: 1,
+    }).addTo(trackLayer);
+
+    map.fitBounds(L.latLngBounds(latlngs).pad(0.15));
+    showTimeline(plate, hours);
+  }
+
+  function showTimeline(plate, hours) {
+    var el = document.getElementById("timeline");
+    if (!el) return;
+    el.style.display = "flex";
+    el.querySelector(".tl-title").textContent = (plate || "Araç") + " · son " + hours + " saat";
+    var slider = el.querySelector(".tl-range");
+    slider.max = String(trackPoints.length - 1);
+    slider.value = slider.max;
+    updateTimeline(trackPoints.length - 1);
+  }
+
+  function updateTimeline(i) {
+    var p = trackPoints[i];
+    if (!p || !trackDot) return;
+    trackDot.setLatLng([p.lat, p.lon]);
+    var el = document.getElementById("timeline");
+    var t = new Date(p.t);
+    el.querySelector(".tl-time").textContent = Number.isFinite(p.t)
+      ? t.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) +
+        " · " + t.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })
+      : "";
+  }
+
+  /* ---------- durum ozeti ---------- */
+  function updateSummary(list) {
+    var el = document.getElementById("veh-summary");
+    if (!el) return;
+    if (!active.vehicle || !list.length) { el.style.display = "none"; return; }
+    var hareket = 0, rolanti = 0, duran = 0, eski = 0;
+    list.forEach(function (v) {
+      if (ageMs(v) > STALE_MS) { eski++; return; }
+      if (isMoving(v)) hareket++;
+      else if (v.idleSpeed === "A") rolanti++;
+      else duran++;
+    });
+    el.style.display = "flex";
+    el.innerHTML =
+      pill("hareket", hareket, "Hareket halinde") +
+      pill("rolanti", rolanti, "Rölantide") +
+      pill("duran", duran, "Duruyor") +
+      (eski ? pill("eski", eski, "Veri eski") : "");
+  }
+
+  function pill(cls, n, label) {
+    return '<span class="vs-pill ' + cls + '"><b>' + n + "</b>" + label + "</span>";
+  }
+
+  /* ---------- arac listesi paneli ---------- */
+  var lastVehicles = [];
+
+  function renderVehicleList() {
+    var host = document.getElementById("veh-list");
+    if (!host) return;
+    var q = (document.getElementById("veh-search").value || "").trim().toLocaleLowerCase("tr");
+    var rows = lastVehicles
+      .filter(function (v) {
+        if (!q) return true;
+        return (
+          (v.plate || "").toLocaleLowerCase("tr").indexOf(q) !== -1 ||
+          (v.vehicleLabel || "").toLocaleLowerCase("tr").indexOf(q) !== -1
+        );
+      })
+      .sort(function (a, b) {
+        var am = isMoving(a) ? 0 : 1, bm = isMoving(b) ? 0 : 1;
+        if (am !== bm) return am - bm;
+        return (a.plate || "").localeCompare(b.plate || "", "tr");
+      });
+
+    if (!rows.length) {
+      host.innerHTML = '<p class="veh-empty">Kayıt yok</p>';
+      return;
+    }
+
+    host.innerHTML = rows
+      .map(function (v) {
+        var sl = siteLabel(v.latitude, v.longitude);
+        var stale = ageMs(v) > STALE_MS;
+        var durum = stale ? "eski" : isMoving(v) ? "hareket" : v.idleSpeed === "A" ? "rolanti" : "duran";
+        return (
+          '<button type="button" class="veh-row" data-plate="' + G.escapeHtml(v.plate || "") + '">' +
+          '<span class="veh-dot ' + durum + '"></span>' +
+          '<span class="veh-main"><b>' + G.escapeHtml(v.plate || "—") + "</b>" +
+          '<em>' + G.escapeHtml(sl ? sl.text : "Konum yok") + "</em></span>" +
+          '<span class="veh-speed">' + (isMoving(v) ? Math.round(v.speed) + " km/sa" : "—") + "</span>" +
+          "</button>"
+        );
+      })
+      .join("");
+  }
+
+  function focusVehicle(plate) {
+    var mk = vehicleMarkers[plate];
+    if (!mk) return;
+    map.flyTo(mk.getLatLng(), Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
+    setTimeout(function () { mk.openPopup(); }, 850);
+  }
+
+  function toggleVehiclePanel(force) {
+    var p = document.getElementById("veh-panel");
+    if (!p) return;
+    var open = force !== undefined ? force : !p.classList.contains("open");
+    p.classList.toggle("open", open);
+    var btn = document.getElementById("veh-panel-btn");
+    if (btn) btn.classList.toggle("on", open);
+    if (open) renderVehicleList();
+  }
+
+  function wireVehicleUi() {
+    var s = document.getElementById("veh-search");
+    if (s) s.addEventListener("input", renderVehicleList);
+
+    var list = document.getElementById("veh-list");
+    if (list) {
+      list.addEventListener("click", function (e) {
+        var b = e.target.closest(".veh-row");
+        if (b) focusVehicle(b.dataset.plate);
+      });
+    }
+
+    var btn = document.getElementById("veh-panel-btn");
+    if (btn) btn.addEventListener("click", function () { toggleVehiclePanel(); });
+
+    var close = document.getElementById("veh-panel-close");
+    if (close) close.addEventListener("click", function () { toggleVehiclePanel(false); });
+
+    // iz butonu popup icinde olusur, delegasyonla yakalanir
+    document.getElementById("map").addEventListener("click", function (e) {
+      var t = e.target.closest(".trk-btn");
+      if (!t) return;
+      e.preventDefault();
+      loadTrack(t.dataset.mu, t.dataset.plate, 6);
+    });
+
+    var tl = document.getElementById("timeline");
+    if (tl) {
+      tl.querySelector(".tl-range").addEventListener("input", function (e) {
+        updateTimeline(Number(e.target.value));
+      });
+      tl.querySelector(".tl-close").addEventListener("click", clearTrack);
+    }
   }
 
   /* ---------- tur filtreleri ---------- */
@@ -861,6 +1163,9 @@
     });
 
     // araclar acikken sorgula, kapaninca durdur
+    var pb = document.getElementById("veh-panel-btn");
+    if (pb) pb.style.display = active.vehicle ? "flex" : "none";
+
     if (active.vehicle) {
       if (!vehicleLayer) vehicleLayer = L.layerGroup();
       if (!map.hasLayer(vehicleLayer)) vehicleLayer.addTo(map);
@@ -869,6 +1174,10 @@
       stopVehiclePolling();
       setVehicleStatus("");
       if (vehicleLayer && map.hasLayer(vehicleLayer)) map.removeLayer(vehicleLayer);
+      clearTrack();
+      toggleVehiclePanel(false);
+      lastVehicles = [];
+      updateSummary([]);
     }
 
     declutter();
@@ -938,6 +1247,7 @@
     addControls();
     wireDirections();
     buildFilters();
+    wireVehicleUi();
 
     map.on("moveend", updateZoomCap);
     updateZoomCap();

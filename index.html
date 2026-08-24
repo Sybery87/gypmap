@@ -1,48 +1,89 @@
-#!/usr/bin/env bash
-# Repoyu tek seferde degil, mantikli adimlar halinde commit'ler.
-# Kullanim:  bash ilk-kurulum.sh
-set -e
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GYP Lokasyon Haritası</title>
+<meta name="description" content="Güney Yıldızı Petrol — sondaj kulesi lokasyonları ve saha personeli takip haritası.">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/favicon.png">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="app">
 
-cd "$(dirname "$0")"
+  <header class="hdr">
+    <div class="brand">
+      <div class="logo-wrap">
+        <img class="logo" src="assets/logo.png" alt="Güney Yıldızı Petrol">
+      </div>
+      <div class="vdiv"></div>
+      <div>
+        <p class="company">GÜNEY YILDIZI PETROL</p>
+        <h1 class="title">Lokasyon Haritası</h1>
+      </div>
+    </div>
 
-if [ -d .git ]; then
-  echo "Bu klasorde zaten bir git deposu var. Devam edilmedi."
-  exit 1
-fi
+    <div class="hdr-right">
+      <div class="stats">
+        <div><b id="stat-rigs">—</b>Aktif Kule</div>
+        <div><b id="stat-sites">—</b>Üretim Kuyusu</div>
+        <div><b id="stat-people">—</b>Saha Personeli</div>
+      </div>
+      <button class="iconbtn" id="theme-btn" type="button" aria-label="Temayı değiştir" title="Gece / gündüz">
+        <svg id="theme-icon" viewBox="0 0 24 24"></svg>
+      </button>
+    </div>
+  </header>
 
-git init -q
-git add .gitignore .editorconfig
-git commit -qm "proje iskeleti"
+  <div id="load-error" style="display:none;padding:14px 26px;background:#4a1d1d;color:#ffd9d4;font-size:13px"></div>
 
-git add assets/turkey-border.js
-git commit -qm "turkiye sinir poligonu (natural earth 10m, sadelestirilmis)"
+  <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
 
-git add assets/style.css assets/logo.png assets/favicon.png assets/favicon.ico assets/apple-touch-icon.png
-git commit -qm "temel stil + logo/favicon"
+  <div id="map">
+    <div id="veh-status" class="veh-status" style="display:none"></div>
+    <div id="veh-summary" class="veh-summary" style="display:none"></div>
 
-git add assets/shared.js
-git commit -qm "ikon setleri ve yardimci fonksiyonlar"
+    <button type="button" id="veh-panel-btn" class="veh-panel-btn" style="display:none"
+            aria-label="Araç listesi">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Araç Listesi</span>
+    </button>
 
-git add index.html assets/app.js
-git commit -qm "harita gorunumu: uydu katmanlari, maske, pinler"
+    <aside id="veh-panel" class="veh-panel" aria-label="Araç listesi">
+      <div class="veh-panel-head">
+        <strong>Araçlar</strong>
+        <button type="button" id="veh-panel-close" aria-label="Kapat">&times;</button>
+      </div>
+      <input id="veh-search" class="veh-search" type="search" placeholder="Plaka ara…"
+             autocomplete="off">
+      <div id="veh-list" class="veh-list"></div>
+    </aside>
 
-git add data.json
-git commit -qm "saha verisi: kuleler, tesisler, uretim sahalari"
+    <div id="timeline" class="timeline" style="display:none">
+      <span class="tl-title"></span>
+      <input class="tl-range" type="range" min="0" max="1" value="1" aria-label="Zaman">
+      <span class="tl-time"></span>
+      <button type="button" class="tl-close" aria-label="İzi kapat">&times;</button>
+    </div>
+  </div>
 
-git add _headers
-git commit -qm "cache ve cors basliklari"
+  <footer class="ftr">
+    <span>Görüntüleme modu — bu harita bilgilendirme amaçlıdır.</span>
+    <span>Son güncelleme: <span id="updated-at">—</span> &nbsp;·&nbsp; Sınır verisi: Natural Earth 1:10m &nbsp;·&nbsp; <span class="credit">Made by <strong>Emre SABERİ</strong></span></span>
+  </footer>
 
-git add README.md
-git commit -qm "readme"
+</div>
 
-git add -A
-git commit -qm "kalan dosyalar" 2>/dev/null || true
-
-git branch -M main
-echo
-echo "Bitti. Commit gecmisi:"
-git --no-pager log --oneline
-echo
-echo "Sonraki adim:"
-echo "  git remote add origin https://github.com/KULLANICI/DEPO.git"
-echo "  git push -u origin main"
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/turkey-border.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/shared.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
