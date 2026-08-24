@@ -82,6 +82,16 @@ servisin arkasında.
 
 Aracın en yakın kule/kuyu/tesise uzaklığı tarayıcıda hesaplanır (haversine).
 1 km altı "sahasında", 6 km altı "yakınında", üstü "en yakın: X".
+
+### Araç yönü
+
+Ok yalnızca yön biliniyorsa çizilir:
+1. Sağlayıcının `speedDirection` alanı (varsa 0 da geçerlidir, tam kuzey demektir)
+2. Yoksa önceki konumdan hesaplanan kerteriz (~15 m altı GPS gürültüsü sayılır)
+3. O da yoksa aracın bilinen son yönü
+
+Hiçbiri yoksa ok yerine yönsüz simge gösterilir — kuzeye bakan yanıltıcı ok
+çizmemek için. Araç hareketli olduğu mavi halkadan anlaşılır.
 Eşikler `SAHADA_KM` / `YAKIN_KM` sabitlerinde. Sunucu gerekmez.
 
 ### Araç listesi
