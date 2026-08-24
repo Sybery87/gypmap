@@ -13,6 +13,7 @@ assets/app.js            harita
 assets/shared.js         ikonlar, tarih/kacis yardimcilari
 assets/style.css         stil
 assets/turkey-border.js  ulke sinir poligonu (Natural Earth 10m, sadelestirilmis)
+assets/config.js         arac servisi adresi (gizli bilgi icermez)
 ```
 
 Düzenleme paneli (`admin.html`) bu repoda yok — bilerek. Yayına çıkarsa herkes
@@ -65,8 +66,24 @@ düşer, yeni konum girilir.
   poligonu ~2 km dışa buffer'ladım.
 - Uydu görüntüsü kaynak yazısı (attribution) sağ altta kalmalı, servislerin şartı.
 
+## Araç takibi
+
+"Araçlar" filtresi açıldığında konumlar ayrı bir servisten çekilir
+(`arac-servisi` klasörü). Adres `assets/config.js` içinde; token orada değil,
+servisin arkasında.
+
+- Yalnızca filtre açıkken sorgulanır, kapalıyken kota harcanmaz
+- 2 dakikada bir yenilenir, sekme arka plandayken durur
+- 30 dakikadan eski veri gönderen araç soluk gösterilir
+- Servis çalışmazsa harita normal çalışmaya devam eder, üstte uyarı çıkar
+- Sürücü adı/kimlik bilgisi servisten geçmez, popup'ta yalnızca plaka + durum var
+
+`config.js` boş bırakılırsa filtre çalışır ama veri çekmez.
+
 ## Yapılacaklar
 
 - [ ] Kule personel listeleri girilecek (şu an hepsi boş)
 - [ ] Diyarbakır kamp koordinatı sahadan teyit edilecek
 - [ ] N47-b4-1 aslında ruhsat sahası (14x7 km), nokta yerine poligon çizilebilir
+- [ ] Araç konumu çalışan konumu demek — harita erişimi kısıtlanmalı mı, karar bekliyor
+- [ ] Kule/kuyu koordinatları sağlayıcıya alan olarak yüklenip giriş/çıkış raporu bağlanabilir

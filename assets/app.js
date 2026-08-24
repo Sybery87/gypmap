@@ -617,6 +617,171 @@
     });
   }
 
+  /* ---------- canli arac katmani ----------
+     Veri ara servisten gelir (bkz. config.js). Token istemciye inmez.
+     Yalnizca "Araclar" filtresi acikken sorgulanir; kapaliyken kota harcanmaz. */
+  var vehicleLayer = null;
+  var vehicleMarkers = {};      // plaka -> marker
+  var vehicleTimer = null;
+  var vehicleLoading = false;
+  var REFRESH_MS = 120000;      // servis onbellegi 2 dk; daha sik sormanin anlami yok
+  var STALE_MS = 30 * 60000;    // 30 dk once veri gonderen arac "eski" sayilir
+
+  function vehicleServiceUrl() {
+    var base = (window.GYP_CONFIG && window.GYP_CONFIG.vehicleService) || "";
+    return base.replace(/\/+$/, "");
+  }
+
+  function heading(v) {
+    var d = Number(v.speedDirection);
+    return Number.isFinite(d) ? d : 0;
+  }
+
+  function isMoving(v) {
+    return Number(v.speed) > 3;
+  }
+
+  function ageMs(v) {
+    var t = Date.parse(v.dataTime || v.gpsTime || "");
+    return Number.isFinite(t) ? Date.now() - t : NaN;
+  }
+
+  function vehicleIcon(v) {
+    var moving = isMoving(v);
+    var stale = ageMs(v) > STALE_MS;
+    var s = Math.round(iconSize() * 0.86);
+    var glyph = moving ? G.GLYPHS.vehicle : G.GLYPHS.vehicleIdle;
+    var rot = moving ? ' style="transform:rotate(' + heading(v) + 'deg)"' : "";
+    return L.divIcon({
+      className: "gyp-marker",
+      html:
+        '<div class="chip vehicle' + (stale ? " stale" : "") + (moving ? " moving" : "") + '">' +
+        "<span" + rot + ">" + glyph + "</span></div>",
+      iconSize: [s, s],
+      iconAnchor: [s / 2, s / 2],
+      popupAnchor: [0, -(s / 2 + 4)],
+    });
+  }
+
+  function vehiclePopupHtml(v) {
+    var age = ageMs(v);
+    var stale = age > STALE_MS;
+    var h =
+      '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(v.plate || "Araç") + "</p>" +
+      '<div class="pop-city">' +
+      G.escapeHtml([v.city, v.town].filter(Boolean).join(" / ") || "Konum bilgisi yok") +
+      "</div></div>";
+    h += '<div class="pop-body"><p class="sec-label">Durum</p><ul class="emp-list">';
+    h += row("Hareket", isMoving(v) ? Math.round(v.speed) + " km/sa" : "Duruyor");
+    if (v.ignition) h += row("Kontak", v.ignition === "A" ? "Açık" : "Kapalı");
+    if (v.idleSpeed === "A") h += row("Rölanti", "Evet");
+    if (v.vehicleLabel) h += row("Etiket", v.vehicleLabel);
+    h += "</ul></div>";
+    h +=
+      '<div class="pop-since"' + (stale ? ' style="color:#c0392b"' : "") + ">" +
+      (Number.isFinite(age) ? "Son veri: " + humanAge(age) : "Son veri zamanı bilinmiyor") +
+      "</div>";
+    return h + dirButton(v.latitude, v.longitude, v.plate || "Araç");
+  }
+
+  function row(k, val) {
+    return '<li><span class="emp-role">' + k + '</span><span class="emp-name">' + G.escapeHtml(val) + "</span></li>";
+  }
+
+  function humanAge(ms) {
+    if (ms < 60000) return "az önce";
+    var dk = Math.round(ms / 60000);
+    if (dk < 60) return dk + " dk önce";
+    var sa = Math.round(dk / 60);
+    if (sa < 24) return sa + " saat önce";
+    return Math.round(sa / 24) + " gün önce";
+  }
+
+  function setVehicleStatus(text, kind) {
+    var el = document.getElementById("veh-status");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "veh-status" + (kind ? " " + kind : "");
+    el.style.display = text ? "block" : "none";
+  }
+
+  function loadVehicles() {
+    var base = vehicleServiceUrl();
+    if (!base) {
+      setVehicleStatus("Araç servisi tanımlı değil", "warn");
+      return Promise.resolve();
+    }
+    if (vehicleLoading) return Promise.resolve();
+    vehicleLoading = true;
+
+    return fetch(base + "/last", { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j || j.ok === false) throw new Error(j && j.error ? j.error : "Geçersiz cevap");
+        drawVehicles(Array.isArray(j.data) ? j.data : []);
+        setVehicleStatus("");
+      })
+      .catch(function (e) {
+        // servis dusse bile harita calismaya devam eder
+        setVehicleStatus("Araç verisi alınamadı (" + e.message + ")", "warn");
+        console.warn("arac servisi:", e);
+      })
+      .then(function () { vehicleLoading = false; });
+  }
+
+  function drawVehicles(list) {
+    if (!vehicleLayer) vehicleLayer = L.layerGroup();
+    if (active.vehicle && !map.hasLayer(vehicleLayer)) vehicleLayer.addTo(map);
+
+    var seen = {};
+    list.forEach(function (v) {
+      if (!Number.isFinite(v.latitude) || !Number.isFinite(v.longitude)) return;
+      var id = v.plate || String(v.muId);
+      seen[id] = true;
+      var ll = L.latLng(v.latitude, v.longitude);
+      var mk = vehicleMarkers[id];
+      if (mk) {
+        mk.setLatLng(ll);
+        mk.setIcon(vehicleIcon(v));
+        mk.setPopupContent(vehiclePopupHtml(v));
+      } else {
+        mk = L.marker(ll, { icon: vehicleIcon(v), riseOnHover: true, zIndexOffset: 400 })
+          .bindPopup(vehiclePopupHtml(v), { closeButton: true, autoPanPadding: [30, 30] })
+          .bindTooltip(id, { permanent: false, direction: "top", className: "gyp-label" });
+        mk.addTo(vehicleLayer);
+        vehicleMarkers[id] = mk;
+      }
+    });
+
+    // artik gelmeyen araclari kaldir
+    Object.keys(vehicleMarkers).forEach(function (id) {
+      if (!seen[id]) {
+        vehicleLayer.removeLayer(vehicleMarkers[id]);
+        delete vehicleMarkers[id];
+      }
+    });
+
+    var el = document.getElementById("cnt-vehicle");
+    if (el) el.textContent = Object.keys(vehicleMarkers).length;
+  }
+
+  function startVehiclePolling() {
+    stopVehiclePolling();
+    loadVehicles();
+    vehicleTimer = setInterval(function () {
+      if (document.hidden) return;   // sekme arka plandayken sorgu atma
+      loadVehicles();
+    }, REFRESH_MS);
+  }
+
+  function stopVehiclePolling() {
+    if (vehicleTimer) clearInterval(vehicleTimer);
+    vehicleTimer = null;
+  }
+
   /* ---------- tur filtreleri ---------- */
   // acilis: hepsi kapali. her tur bagimsiz. "Tumu" toggle.
   var CATEGORIES = [
@@ -624,6 +789,7 @@
     { key: "office", label: "Ofisler", glyph: "office" },
     { key: "workshop", label: "Kamplar", glyph: "workshop" },
     { key: "production", label: "Üretim Kuyuları", glyph: "production" },
+    { key: "vehicle", label: "Araçlar", glyph: "vehicle" },
   ];
   var ALL_SVG =
     '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
@@ -632,7 +798,7 @@
     '<rect class="gl" x="2" y="11.4" width="8.6" height="7" rx="1.6"/>' +
     '<rect class="gl" x="13.4" y="11.4" width="8.6" height="7" rx="1.6"/></svg>';
 
-  var active = { rig: false, office: false, workshop: false, production: false };
+  var active = { rig: false, office: false, workshop: false, production: false, vehicle: false };
 
   function allOn() {
     return CATEGORIES.every(function (c) { return active[c.key]; });
@@ -693,6 +859,18 @@
       if (showGhosts && !map.hasLayer(l)) l.addTo(map);
       else if (!showGhosts && map.hasLayer(l)) map.removeLayer(l);
     });
+
+    // araclar acikken sorgula, kapaninca durdur
+    if (active.vehicle) {
+      if (!vehicleLayer) vehicleLayer = L.layerGroup();
+      if (!map.hasLayer(vehicleLayer)) vehicleLayer.addTo(map);
+      if (!vehicleTimer) startVehiclePolling();
+    } else {
+      stopVehiclePolling();
+      setVehicleStatus("");
+      if (vehicleLayer && map.hasLayer(vehicleLayer)) map.removeLayer(vehicleLayer);
+    }
+
     declutter();
   }
 

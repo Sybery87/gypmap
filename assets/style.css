@@ -133,6 +133,20 @@ h1.title {
 .filter.on .filter-count { background: var(--ink); color: #fff; }
 [data-theme="dark"] .filter.on .filter-count { background: var(--accent); color: #04142c; }
 
+/* araclar */
+.chip.vehicle { border-radius: 50%; }
+.chip.vehicle span { display: flex; transition: transform .4s ease; }
+.chip.vehicle.moving { box-shadow: 0 0 0 2px rgba(9, 113, 206, .35), 0 2px 8px rgba(0, 0, 0, .5); }
+.chip.vehicle.stale { opacity: .48; }
+.chip.vehicle.stale .gl { fill: #7c879b; }
+.veh-status {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 700;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--steel); box-shadow: 0 6px 20px rgba(0, 0, 0, .3); pointer-events: none;
+}
+.veh-status.warn { color: #c0392b; border-color: #c0392b; }
+
 #map { position: relative; flex: 1; min-height: 0; background: var(--mask); transition: background .3s ease; }
 .leaflet-container { background: var(--mask); font-family: 'Inter', sans-serif; }
 .leaflet-control-attribution {
