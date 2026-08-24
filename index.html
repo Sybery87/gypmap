@@ -40,7 +40,18 @@
 
   <div id="load-error" style="display:none;padding:14px 26px;background:#4a1d1d;color:#ffd9d4;font-size:13px"></div>
 
-  <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
+  <div class="filter-bar" id="filter-bar">
+    <button type="button" class="filter-toggle" id="filter-toggle"
+            aria-expanded="true" aria-controls="filters">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="ft-label">Katmanlar</span>
+      <span class="ft-active" id="ft-active"></span>
+    </button>
+    <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
+  </div>
 
   <div id="map">
     <div id="veh-status" class="veh-status" style="display:none"></div>

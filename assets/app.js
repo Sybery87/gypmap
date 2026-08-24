@@ -1084,6 +1084,44 @@
     }
   }
 
+  /* ---------- katman seridi ac/kapa ---------- */
+  var BAR_KEY = "gyp-filters-collapsed";
+
+  function setBar(collapsed) {
+    var bar = document.getElementById("filter-bar");
+    var btn = document.getElementById("filter-toggle");
+    if (!bar) return;
+    bar.classList.toggle("collapsed", collapsed);
+    if (btn) btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    try { localStorage.setItem(BAR_KEY, collapsed ? "1" : "0"); } catch (e) {}
+    // serit yuksekligi degisti, harita yeniden olculmeli
+    setTimeout(function () {
+      if (map) { map.invalidateSize(); declutter(); }
+    }, 280);
+  }
+
+  function updateBarSummary() {
+    var el = document.getElementById("ft-active");
+    if (!el) return;
+    var acik = CATEGORIES.filter(function (c) { return active[c.key]; });
+    if (!acik.length) el.textContent = "— hiçbiri seçili değil";
+    else if (acik.length === CATEGORIES.length) el.textContent = "— tümü";
+    else el.textContent = "— " + acik.map(function (c) { return c.label; }).join(", ");
+  }
+
+  function wireBar() {
+    var btn = document.getElementById("filter-toggle");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var bar = document.getElementById("filter-bar");
+      setBar(!bar.classList.contains("collapsed"));
+    });
+    var saved = null;
+    try { saved = localStorage.getItem(BAR_KEY); } catch (e) {}
+    if (saved === "1") setBar(true);
+    updateBarSummary();
+  }
+
   /* ---------- tur filtreleri ---------- */
   // acilis: hepsi kapali. her tur bagimsiz. "Tumu" toggle.
   var CATEGORIES = [
@@ -1146,6 +1184,7 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    updateBarSummary();
   }
 
   function applyFilters() {
@@ -1248,6 +1287,7 @@
     wireDirections();
     buildFilters();
     wireVehicleUi();
+    wireBar();
 
     map.on("moveend", updateZoomCap);
     updateZoomCap();
