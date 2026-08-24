@@ -634,7 +634,25 @@
 
   function heading(v) {
     var d = Number(v.speedDirection);
+    if (Number.isFinite(d) && d > 0) return d;
+    // saglayici yon gondermezse onceki konumdan hesapla
+    var id = v.plate || String(v.muId);
+    var rec = vehicleMarkers[id];
+    if (rec && rec.prev) {
+      var b = bearing(rec.prev.lat, rec.prev.lon, v.latitude, v.longitude);
+      if (b !== null) return b;
+    }
     return Number.isFinite(d) ? d : 0;
+  }
+
+  function bearing(lat1, lon1, lat2, lon2) {
+    if (Math.abs(lat1 - lat2) < 1e-6 && Math.abs(lon1 - lon2) < 1e-6) return null;
+    var r = Math.PI / 180;
+    var y = Math.sin((lon2 - lon1) * r) * Math.cos(lat2 * r);
+    var x =
+      Math.cos(lat1 * r) * Math.sin(lat2 * r) -
+      Math.sin(lat1 * r) * Math.cos(lat2 * r) * Math.cos((lon2 - lon1) * r);
+    return (Math.atan2(y, x) / r + 360) % 360;
   }
 
   function isMoving(v) {
@@ -800,6 +818,69 @@
       .then(function () { vehicleLoading = false; });
   }
 
+  /* ---------- yon izi ----------
+     Hareket halindeki aracin onunde kisa mavi bir isin. Uzunluk hiza gore,
+     ama ekranda hep gorunur kalsin diye piksel olarak sinirlanir. */
+  var headingLayer = null;
+
+  function rayPixels(speed) {
+    if (!map) return 30;
+    // ~40 saniyelik yol; metreyi ekran pikseline cevir
+    var metre = (Number(speed) || 0) * 1000 * (40 / 3600);
+    var c = map.getCenter();
+    var p1 = map.latLngToContainerPoint(c);
+    var p2 = map.latLngToContainerPoint(L.latLng(c.lat, c.lng + 0.01));
+    var pxPerDeg = Math.abs(p2.x - p1.x) || 1;
+    var metrePerDeg = 111320 * Math.cos((c.lat * Math.PI) / 180) * 0.01;
+    var px = (metre / metrePerDeg) * pxPerDeg;
+    return Math.max(22, Math.min(72, px));
+  }
+
+  function drawHeadings() {
+    if (!headingLayer) headingLayer = L.layerGroup();
+    headingLayer.clearLayers();
+    if (!active.vehicle || !map.hasLayer(vehicleLayer || L.layerGroup())) {
+      if (map.hasLayer(headingLayer)) map.removeLayer(headingLayer);
+      return;
+    }
+    if (!map.hasLayer(headingLayer)) headingLayer.addTo(map);
+
+    Object.keys(vehicleMarkers).forEach(function (id) {
+      var rec = vehicleMarkers[id];
+      var v = rec.data;
+      if (!isMoving(v) || ageMs(v) > STALE_MS) return;
+      if (!vehicleLayer.hasLayer(rec.marker)) return;   // durum filtresiyle gizliyse cizme
+
+      var deg = heading(v);
+      var rad = (deg * Math.PI) / 180;
+      var len = rayPixels(v.speed);
+      var p0 = map.latLngToContainerPoint(rec.marker.getLatLng());
+      var chipYari = iconSize() * 0.43;
+
+      // 0 derece kuzey; ekranda y asagi dogru buyur
+      var ux = Math.sin(rad), uy = -Math.cos(rad);
+      var bas = L.point(p0.x + ux * chipYari, p0.y + uy * chipYari);
+
+      // uca dogru incelen ve solan uc parca
+      var kisim = [
+        { t0: 0.00, t1: 0.42, w: 4.2, o: 0.85 },
+        { t0: 0.40, t1: 0.74, w: 3.0, o: 0.5 },
+        { t0: 0.72, t1: 1.00, w: 2.0, o: 0.25 },
+      ];
+      kisim.forEach(function (k) {
+        var a = L.point(bas.x + ux * len * k.t0, bas.y + uy * len * k.t0);
+        var b = L.point(bas.x + ux * len * k.t1, bas.y + uy * len * k.t1);
+        L.polyline(
+          [map.containerPointToLatLng(a), map.containerPointToLatLng(b)],
+          {
+            color: "#4fa6f0", weight: k.w, opacity: k.o,
+            lineCap: "round", interactive: false,
+          }
+        ).addTo(headingLayer);
+      });
+    });
+  }
+
   function drawVehicles(list) {
     if (!vehicleLayer) vehicleLayer = L.layerGroup();
     if (active.vehicle && !map.hasLayer(vehicleLayer)) vehicleLayer.addTo(map);
@@ -812,6 +893,8 @@
       var ll = L.latLng(v.latitude, v.longitude);
       var rec = vehicleMarkers[id];
       if (rec) {
+        var eskiKonum = rec.data;
+        if (eskiKonum) rec.prev = { lat: eskiKonum.latitude, lon: eskiKonum.longitude };
         rec.data = v;
         rec.marker.setLatLng(ll);
         rec.marker.setIcon(vehicleIcon(v));
@@ -840,6 +923,7 @@
     });
     updateSummary(lastVehicles);
     applyStatusFilter();
+    drawHeadings();
     if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
   }
 
@@ -1029,6 +1113,7 @@
       if (goster && !ekli) rec.marker.addTo(vehicleLayer);
       else if (!goster && ekli) vehicleLayer.removeLayer(rec.marker);
     });
+    drawHeadings();
     declutter();
   }
 
@@ -1273,6 +1358,7 @@
       stopVehiclePolling();
       setVehicleStatus("");
       if (vehicleLayer && map.hasLayer(vehicleLayer)) map.removeLayer(vehicleLayer);
+      if (headingLayer) { headingLayer.clearLayers(); if (map.hasLayer(headingLayer)) map.removeLayer(headingLayer); }
       clearTrack();
       toggleVehiclePanel(false);
       lastVehicles = [];
@@ -1354,6 +1440,7 @@
     updateZoomCap();
     map.on("zoomend", refreshIconSizes);
     map.on("zoomend moveend resize", declutter);
+    map.on("zoomend moveend resize", drawHeadings);
     map.on("zoomend", applyLayer);
 
     var wasCompact = G.isCompact();
