@@ -42,16 +42,17 @@
       '<path class="gl" d="M10.2,15.4 L13,15.4" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
       '<path class="gl" d="M5.8,6.2 L5.8,3.2 L16.7,3.2 L16.7,9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
       "</svg>",
-    // ok yukari bakar; hareket halindeki arac icin yon acisiyla dondurulur
+    // ok yukari bakar; hareket halindeki arac icin yon acisiyla dondurulur.
+    // kare viewBox: donerken merkez kaymasin
     vehicle:
-      '<svg viewBox="0 0 24 20" width="18" height="15" aria-hidden="true">' +
-      '<path class="gl" d="M12,2.2 L18.4,17.2 L12,13.6 L5.6,17.2 Z"/>' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<path class="gl" d="M12,3.4 L19,20.6 L12,16.6 L5,20.6 Z"/>' +
       "</svg>",
     // duran arac icin yonu belirsiz, dolu daire
     vehicleIdle:
-      '<svg viewBox="0 0 24 20" width="18" height="15" aria-hidden="true">' +
-      '<circle class="gl" cx="12" cy="10" r="5.4"/>' +
-      '<circle class="void" cx="12" cy="10" r="2.1"/>' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<circle class="gl" cx="12" cy="12" r="6.2"/>' +
+      '<circle class="void" cx="12" cy="12" r="2.4"/>' +
       "</svg>",
   };
 
