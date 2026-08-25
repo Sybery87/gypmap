@@ -591,15 +591,27 @@ h1.title {
 }
 
 @media (max-width: 760px) {
-  /* ust koseler kalabaliklasiyordu: katman secici > rozetler > liste butonu
-     seklinde alt alta dizildi */
+  /* Ust alan dar; kontroller tek sirada, rozetler onun altinda tek satirda
+     yatay kaydirilabilir. Boylece harita ustune tasmiyor. */
   .layerbox { padding: 4px; }
+  .layerbox button { font-size: 10px; padding: 5px 8px; }
+  .veh-panel-btn { top: 8px; right: 118px; padding: 6px 8px; }
+  .veh-panel-btn span { display: none; }
+  .zoom-hint { display: none; }
+
   .veh-summary {
-    top: 54px; left: 8px; right: 8px; transform: none;
-    justify-content: flex-start; flex-wrap: wrap; gap: 5px;
+    top: 48px; left: 0; right: 0; transform: none;
+    justify-content: flex-start; flex-wrap: nowrap;
+    gap: 5px; padding: 0 8px;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    touch-action: pan-x;
   }
-  .veh-panel-btn { top: 8px; right: 128px; padding: 6px 9px; }
-  .veh-panel-btn span { display: none; }   /* dar ekranda sadece simge */
-  .zoom-hint { display: none; }          /* dar ekranda yer kaplamasin */
-  .leaflet-control-zoom { margin-top: 96px !important; }
+  .veh-summary::-webkit-scrollbar { display: none; }
+  .vs-pill { flex: none; padding: 5px 9px; font-size: 10px; }
+  .vs-pill b { font-size: 11.5px; }
+
+  .leaflet-control-zoom { margin-top: 86px !important; }
+  .legend { font-size: 8.5px; padding: 5px 8px; gap: 7px; }
+  .legend-hint { display: none; }
 }

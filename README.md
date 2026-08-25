@@ -93,7 +93,10 @@ Ok yalnızca yön biliniyorsa çizilir:
 Hiçbiri yoksa ok yerine yönsüz simge gösterilir — kuzeye bakan yanıltıcı ok
 çizmemek için. Araç hareketli olduğu mavi halkadan anlaşılır.
 
-Sağlayıcı `speedDirection` göndermiyor. Bu yüzden "Araçlar" ilk açıldığında,
+Sağlayıcı `speedDirection` alanını gönderiyor ama değeri hep 0 geliyor.
+Bu yüzden **hareketten hesaplanan yön önceliklidir**; sağlayıcı değeri yalnızca
+elimizde hiç hareket verisi yoksa ve sıfırdan farklıysa kullanılır. Aksi halde
+her yenilemede tüm oklar kuzeye dönüyordu. Bu yüzden "Araçlar" ilk açıldığında,
 yönü bilinmeyen hareketli araçlar için son 30 dakikanın konumları çekilip yön
 hesaplanıyor (`bootstrapHeadings`, en fazla 6 araç, sırayla). Hesaplanan yön
 `localStorage`'a yazılıyor, böylece sonraki açılışlarda ok hemen doğru geliyor.

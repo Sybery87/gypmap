@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-17",
+  "updatedAt": "2026-08-25",
   "facilities": [
     {
       "id": "fac-merkez",
@@ -74,8 +74,8 @@
       "id": "rig-6",
       "name": "Rig#6",
       "city": "Adıyaman",
-      "lat": 37.68606,
-      "lon": 38.31325,
+      "lat": 37.6861936,
+      "lon": 38.3135248,
       "since": "2026-08-01",
       "employees": [],
       "previous": null,
@@ -106,13 +106,13 @@
     {
       "id": "rig-14",
       "name": "Rig#14",
-      "city": "Mardin",
-      "lat": 37.67692,
-      "lon": 40.62942,
+      "city": "Diyarbakır",
+      "lat": 37.855774,
+      "lon": 40.843994,
       "since": "2026-08-01",
       "employees": [],
       "previous": null,
-      "note": "Batı Çalıktepe"
+      "note": "İsalı-3"
     },
     {
       "id": "rig-15",

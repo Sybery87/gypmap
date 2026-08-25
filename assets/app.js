@@ -647,37 +647,48 @@
     try { localStorage.setItem(HEAD_KEY, JSON.stringify(headStore)); } catch (e) {}
   }
 
+  /* Saglayici yon gondermiyor (ya da hep 0 gonderiyor). Bu yuzden yonu
+     ONCE aracin gercekten gittigi yoldan hesapliyoruz; saglayici degeri
+     yalnizca elimizde hareket verisi yoksa kullaniliyor. */
   function heading(v) {
     var id = v.plate || String(v.muId);
     var rec = vehicleMarkers[id];
 
-    // 1) saglayici gonderiyorsa (0 dahil gecerli, tam kuzey demektir)
-    if (v.speedDirection !== undefined && v.speedDirection !== null && v.speedDirection !== "") {
-      var d = Number(v.speedDirection);
-      if (Number.isFinite(d)) {
-        d = ((d % 360) + 360) % 360;
-        if (rec) rec.lastHeading = d;
-        saveHeading(id, d);
-        return d;
-      }
-    }
-
-    // 2) onceki konumdan gidis yonu
+    // 1) onceki konumdan gidis yonu — en guvenilir kaynak
     if (rec && rec.prev) {
       var b = bearing(rec.prev.lat, rec.prev.lon, v.latitude, v.longitude);
       if (b !== null) {
         rec.lastHeading = b;
+        rec.headingFromMovement = true;
         saveHeading(id, b);
         return b;
       }
     }
 
-    // 3) bu oturumda bilinen son yon
+    // 2) hareketten hesaplanmis onceki yon (arac durmus olabilir)
+    if (rec && rec.headingFromMovement && Number.isFinite(rec.lastHeading)) {
+      return rec.lastHeading;
+    }
+
+    // 3) saglayici degeri (0 da gecerli sayilir ama hareket verisi onceliklidir)
+    if (v.speedDirection !== undefined && v.speedDirection !== null && v.speedDirection !== "") {
+      var d = Number(v.speedDirection);
+      if (Number.isFinite(d) && d !== 0) {
+        d = ((d % 360) + 360) % 360;
+        if (rec) rec.lastHeading = d;
+        return d;
+      }
+    }
+
+    // 4) bu oturumda bilinen son yon
     if (rec && Number.isFinite(rec.lastHeading)) return rec.lastHeading;
 
-    // 4) onceki ziyaretten hatirlanan yon
+    // 5) onceki ziyaretten hatirlanan yon
     if (Number.isFinite(headStore[id])) {
-      if (rec) rec.lastHeading = headStore[id];
+      if (rec) {
+        rec.lastHeading = headStore[id];
+        rec.headingFromMovement = true;
+      }
       return headStore[id];
     }
     return null;
@@ -879,10 +890,10 @@
           rec.data && rec.data.muId &&
           isMoving(rec.data) &&
           ageMs(rec.data) <= STALE_MS &&
-          heading(rec.data) === null
+          !rec.headingFromMovement          // hareketten hesaplanmis yon yoksa
         );
       })
-      .slice(0, 6);
+      .slice(0, 10);
 
     if (!eksik.length) return;
     bootstrapping = true;
@@ -915,6 +926,7 @@
               if (b !== null) {
                 var id = rec.data.plate || String(rec.data.muId);
                 rec.lastHeading = b;
+                rec.headingFromMovement = true;
                 saveHeading(id, b);
                 rec.marker.setIcon(vehicleIcon(rec.data));
                 break;
