@@ -635,30 +635,51 @@
   /* Yon bilgisi: once saglayicidan, yoksa onceki konumdan hesapla,
      o da yoksa bilinen son yonu kullan. Hicbiri yoksa null doner ve
      ok yerine yonsuz simge gosterilir (kuzeye bakan yaniltici ok cizmeyiz). */
+  /* Saglayici yon gondermiyor; yonu aracin gittigi yoldan hesapliyoruz.
+     Hesaplanan yon tarayiciya yazilir, boylece sayfa yenilense de kaybolmaz. */
+  var HEAD_KEY = "gyp-heading";
+  var headStore = (function () {
+    try { return JSON.parse(localStorage.getItem(HEAD_KEY) || "{}"); } catch (e) { return {}; }
+  })();
+
+  function saveHeading(id, deg) {
+    headStore[id] = Math.round(deg);
+    try { localStorage.setItem(HEAD_KEY, JSON.stringify(headStore)); } catch (e) {}
+  }
+
   function heading(v) {
     var id = v.plate || String(v.muId);
     var rec = vehicleMarkers[id];
 
-    // Alan cevapta VARSA 0 gecerlidir (tam kuzey). Yoksa bilinmiyor demektir;
-    // proxy null/undefined alanlari zaten dusuruyor.
+    // 1) saglayici gonderiyorsa (0 dahil gecerli, tam kuzey demektir)
     if (v.speedDirection !== undefined && v.speedDirection !== null && v.speedDirection !== "") {
       var d = Number(v.speedDirection);
       if (Number.isFinite(d)) {
         d = ((d % 360) + 360) % 360;
         if (rec) rec.lastHeading = d;
+        saveHeading(id, d);
         return d;
       }
     }
 
+    // 2) onceki konumdan gidis yonu
     if (rec && rec.prev) {
       var b = bearing(rec.prev.lat, rec.prev.lon, v.latitude, v.longitude);
       if (b !== null) {
         rec.lastHeading = b;
+        saveHeading(id, b);
         return b;
       }
     }
 
+    // 3) bu oturumda bilinen son yon
     if (rec && Number.isFinite(rec.lastHeading)) return rec.lastHeading;
+
+    // 4) onceki ziyaretten hatirlanan yon
+    if (Number.isFinite(headStore[id])) {
+      if (rec) rec.lastHeading = headStore[id];
+      return headStore[id];
+    }
     return null;
   }
 
@@ -814,10 +835,10 @@
     el.style.display = text ? "block" : "none";
   }
 
-  function loadVehicles() {
+  function loadVehicles(silent) {
     var base = vehicleServiceUrl();
     if (!base) {
-      setVehicleStatus("Araç servisi tanımlı değil", "warn");
+      if (!silent) setVehicleStatus("Araç servisi tanımlı değil", "warn");
       return Promise.resolve();
     }
     if (vehicleLoading) return Promise.resolve();
@@ -835,10 +856,76 @@
       })
       .catch(function (e) {
         // servis dusse bile harita calismaya devam eder
-        setVehicleStatus("Araç verisi alınamadı (" + e.message + ")", "warn");
+        if (!silent) setVehicleStatus("Araç verisi alınamadı (" + e.message + ")", "warn");
         console.warn("arac servisi:", e);
       })
       .then(function () { vehicleLoading = false; });
+  }
+
+  /* Ilk acilista yonu bilinmeyen hareketli araclar icin son yarim saatin
+     konumlarindan yon hesapla. Saglayici es zamanli tek istek kabul ettigi
+     icin sirayla ve sinirli sayida yapilir. */
+  var bootstrapping = false;
+
+  function bootstrapHeadings() {
+    var base = vehicleServiceUrl();
+    if (!base || bootstrapping || !active.vehicle) return;
+
+    var eksik = Object.keys(vehicleMarkers)
+      .map(function (id) { return vehicleMarkers[id]; })
+      .filter(function (rec) {
+        return (
+          !rec.bootstrapped &&
+          rec.data && rec.data.muId &&
+          isMoving(rec.data) &&
+          ageMs(rec.data) <= STALE_MS &&
+          heading(rec.data) === null
+        );
+      })
+      .slice(0, 6);
+
+    if (!eksik.length) return;
+    bootstrapping = true;
+
+    var end = new Date();
+    var start = new Date(Date.now() - 30 * 60000);
+
+    var sira = eksik.reduce(function (zincir, rec) {
+      return zincir.then(function () {
+        rec.bootstrapped = true;
+        var qs = new URLSearchParams({
+          muId: String(rec.data.muId),
+          startTime: apiTime(start),
+          endTime: apiTime(end),
+        });
+        return fetch(base + "/locations?" + qs.toString(), { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) {
+            var pts = (j && Array.isArray(j.data) ? j.data : [])
+              .filter(function (p) {
+                return Number.isFinite(p.latitude) && Number.isFinite(p.longitude);
+              })
+              .sort(function (a, b) { return Date.parse(a.time) - Date.parse(b.time); });
+            if (pts.length < 2) return;
+
+            // sondan geriye dogru, anlamli mesafedeki ilk noktayi bul
+            var son = pts[pts.length - 1];
+            for (var i = pts.length - 2; i >= 0; i--) {
+              var b = bearing(pts[i].latitude, pts[i].longitude, son.latitude, son.longitude);
+              if (b !== null) {
+                var id = rec.data.plate || String(rec.data.muId);
+                rec.lastHeading = b;
+                saveHeading(id, b);
+                rec.marker.setIcon(vehicleIcon(rec.data));
+                break;
+              }
+            }
+          })
+          .catch(function () { /* yon bulunamadi, sorun degil */ });
+      });
+    }, Promise.resolve());
+
+    sira.then(function () { bootstrapping = false; });
   }
 
   function drawVehicles(list) {
@@ -887,6 +974,7 @@
     });
     updateSummary(lastVehicles);
     applyStatusFilter();
+    bootstrapHeadings();
     if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
   }
 
@@ -923,6 +1011,35 @@
     );
   }
 
+  /* Iz gorunumunde harita sadelesir: diger tum isaretler gizlenir,
+     yalnizca izi incelenen arac kalir. */
+  var trackFocus = null;
+
+  function enterTrackMode(plate) {
+    trackFocus = plate;
+    if (markerLayer && map.hasLayer(markerLayer)) map.removeLayer(markerLayer);
+    if (ghostLayer && map.hasLayer(ghostLayer)) map.removeLayer(ghostLayer);
+    if (trailLayer && map.hasLayer(trailLayer)) map.removeLayer(trailLayer);
+    Object.keys(vehicleMarkers).forEach(function (id) {
+      if (id !== plate && vehicleLayer.hasLayer(vehicleMarkers[id].marker)) {
+        vehicleLayer.removeLayer(vehicleMarkers[id].marker);
+      }
+    });
+    var s = document.getElementById("veh-summary");
+    if (s) s.style.display = "none";
+    toggleVehiclePanel(false);
+    declutter();
+  }
+
+  function exitTrackMode() {
+    if (!trackFocus) return;
+    trackFocus = null;
+    if (markerLayer && !map.hasLayer(markerLayer)) markerLayer.addTo(map);
+    applyFilters();          // katman filtrelerini yeniden uygula
+    applyStatusFilter();     // gizlenen arac isaretcilerini geri getir
+    updateSummary(lastVehicles);
+  }
+
   function clearTrack() {
     if (trackLayer) map.removeLayer(trackLayer);
     trackLayer = null;
@@ -930,6 +1047,7 @@
     trackPoints = [];
     var el = document.getElementById("timeline");
     if (el) el.style.display = "none";
+    exitTrackMode();
   }
 
   function loadTrack(muId, plate, hours) {
@@ -962,6 +1080,7 @@
           return;
         }
         drawTrack(pts, plate, hours);
+        enterTrackMode(plate);
         setVehicleStatus("");
       })
       .catch(function (e) {
@@ -1030,9 +1149,9 @@
   function updateSummary(list) {
     var el = document.getElementById("veh-summary");
     if (!el) return;
-    if (!active.vehicle || !list.length) {
+    if (!active.vehicle || !list.length || trackFocus) {
       el.style.display = "none";
-      statusFilter = null;
+      if (!trackFocus) statusFilter = null;
       return;
     }
     var say = { hareket: 0, rolanti: 0, duran: 0, eski: 0 };
@@ -1071,7 +1190,7 @@
     if (!vehicleLayer) return;
     Object.keys(vehicleMarkers).forEach(function (id) {
       var rec = vehicleMarkers[id];
-      var goster = statusMatches(rec.data);
+      var goster = trackFocus ? id === trackFocus : statusMatches(rec.data);
       var ekli = vehicleLayer.hasLayer(rec.marker);
       if (goster && !ekli) rec.marker.addTo(vehicleLayer);
       else if (!goster && ekli) vehicleLayer.removeLayer(rec.marker);
@@ -1149,6 +1268,16 @@
   }
 
   function wireVehicleUi() {
+    // Panel, zaman cizelgesi ve rozetler harita konteynerinin icinde duruyor.
+    // Leaflet dokunma/kaydirma olaylarini yakaladigi icin telefonda liste
+    // kaydirilamiyordu; bu ogeler uzerinde olay yayilimini kesiyoruz.
+    ["veh-panel", "timeline", "veh-summary", "veh-panel-btn", "veh-status"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    });
+
     var s = document.getElementById("veh-search");
     if (s) s.addEventListener("input", renderVehicleList);
 
@@ -1424,6 +1553,8 @@
       .then(function (json) {
         data = json;
         render();
+        // arac sayaci filtre acilmadan da dolsun (servis onbellekli, ucuz)
+        loadVehicles(true);
       })
       .catch(function (err) {
         document.getElementById("load-error").style.display = "block";

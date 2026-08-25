@@ -92,6 +92,27 @@ Ok yalnızca yön biliniyorsa çizilir:
 
 Hiçbiri yoksa ok yerine yönsüz simge gösterilir — kuzeye bakan yanıltıcı ok
 çizmemek için. Araç hareketli olduğu mavi halkadan anlaşılır.
+
+Sağlayıcı `speedDirection` göndermiyor. Bu yüzden "Araçlar" ilk açıldığında,
+yönü bilinmeyen hareketli araçlar için son 30 dakikanın konumları çekilip yön
+hesaplanıyor (`bootstrapHeadings`, en fazla 6 araç, sırayla). Hesaplanan yön
+`localStorage`'a yazılıyor, böylece sonraki açılışlarda ok hemen doğru geliyor.
+
+### İz görünümü
+
+"Son 6 saat izi" açıldığında harita sadeleşir: diğer tüm işaretler ve durum
+özeti gizlenir, yalnızca izi incelenen araç kalır. Kapatınca hepsi geri gelir
+(`enterTrackMode` / `exitTrackMode`).
+
+### Telefon
+
+- Panel alttan yarım ekran açılır, harita üstte görünür kalır
+- Panel/çizelge/rozetler harita konteynerinin içinde olduğu için Leaflet
+  dokunma olaylarını yutuyordu; `L.DomEvent.disableScrollPropagation` ile
+  kesildi — aksi halde liste kaydırılamıyor
+- Arama kutusu 16px; daha küçük yazıda iOS otomatik yakınlaştırıyor
+- Üst köşede katman seçici / liste butonu / rozetler çakışmasın diye
+  liste butonu dar ekranda yalnızca simge gösterir
 Eşikler `SAHADA_KM` / `YAKIN_KM` sabitlerinde. Sunucu gerekmez.
 
 ### Araç listesi
