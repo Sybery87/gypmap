@@ -433,6 +433,21 @@
     document.getElementById("stat-people").textContent = people > 0 ? people : "—";
     document.getElementById("updated-at").textContent = G.formatDate(data.updatedAt) || "—";
 
+    // Dar ekranda ulke geneli gorunumu buyuk bosluk birakiyor; acilista
+    // isaretcilerin bulundugu alana odaklan.
+    if (G.isCompact()) {
+      var noktalar = [];
+      (data.rigs || []).forEach(function (r) { noktalar.push([r.lat, r.lon]); });
+      (data.facilities || []).forEach(function (f) { noktalar.push([f.lat, f.lon]); });
+      (data.productionSites || []).forEach(function (s) { noktalar.push([s.lat, s.lon]); });
+      noktalar = noktalar.filter(function (p) {
+        return Number.isFinite(p[0]) && Number.isFinite(p[1]);
+      });
+      if (noktalar.length > 1) {
+        map.fitBounds(L.latLngBounds(noktalar), { padding: [12, 12], animate: false });
+      }
+    }
+
     lastIconSize = iconSize();
     syncFilters();
     applyFilters();

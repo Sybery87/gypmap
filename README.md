@@ -116,6 +116,17 @@ hesaplanıyor (`bootstrapHeadings`, en fazla 6 araç, sırayla). Hesaplanan yön
 - Arama kutusu 16px; daha küçük yazıda iOS otomatik yakınlaştırıyor
 - Üst köşede katman seçici / liste butonu / rozetler çakışmasın diye
   liste butonu dar ekranda yalnızca simge gösterir
+
+Arayüz ekranın %68'ini kaplıyordu, haritaya çok az yer kalıyordu. Telefonda
+sadeleştirildi (harita artık ~%81):
+
+- Başlık tek satır; logo ve yazılar küçültüldü
+- Üstteki sayaçlar gizlendi — aynı sayılar filtre rozetlerinde zaten var
+- Filtre rozetleri ve katman şeridi inceltildi
+- Lejant gizlendi (açıklama amaçlı, dar ekranda yer kaplıyor)
+- Altbilgi tek satır: yalnızca güncelleme tarihi + imza
+- Açılışta harita işaretçilerin bulunduğu alana oturuyor
+- Dokunma hedefleri en az 30 px
 Eşikler `SAHADA_KM` / `YAKIN_KM` sabitlerinde. Sunucu gerekmez.
 
 ### Araç listesi
