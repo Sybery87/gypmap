@@ -307,16 +307,21 @@
   }
 
   // koordinat data-* ile tasiniyor, tiklama delegasyonla yakalaniyor
-  function dirButton(lat, lon, label) {
+  function dirButtonInner(lat, lon, label) {
     if (typeof lat !== "number" || typeof lon !== "number") return "";
     return (
-      '<div class="pop-foot"><button type="button" class="dir-btn" ' +
+      '<button type="button" class="dir-btn" ' +
       'data-lat="' + lat + '" data-lon="' + lon + '" data-label="' + G.escapeHtml(label) + '">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">' +
       '<path d="M12 2.6l9.4 9.4-9.4 9.4L2.6 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>' +
       '<path d="M9.4 14.2v-2.4a2 2 0 012-2h3.4M13.4 7.8l2.4 2-2.4 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
-      "</svg> Yol Tarifi</button></div>"
+      "</svg> Yol Tarifi</button>"
     );
+  }
+
+  function dirButton(lat, lon, label) {
+    var b = dirButtonInner(lat, lon, label);
+    return b ? '<div class="pop-foot">' + b + "</div>" : "";
   }
 
   function productionPopupHtml(s) {
@@ -829,25 +834,30 @@
         "<b>" + G.escapeHtml(sl.text) + "</b><span>" + sl.detail + "</span></div>";
     }
 
-    h += '<div class="pop-body"><p class="sec-label">Durum</p><ul class="emp-list">';
-    h += row("Hareket", isMoving(v) ? Math.round(v.speed) + " km/sa" : "Duruyor");
-    if (v.ignition) h += row("Kontak", v.ignition === "A" ? "Açık" : "Kapalı");
-    if (v.idleSpeed === "A") h += row("Rölanti", "Evet");
-    if (v.vehicleLabel) h += row("Etiket", v.vehicleLabel);
-    h += "</ul></div>";
+    h += '<div class="pop-body pop-body-veh"><div class="veh-chips">';
+    h += chip(isMoving(v) ? Math.round(v.speed) + " km/sa" : "Duruyor", isMoving(v) ? "go" : "");
+    if (v.ignition) h += chip("Kontak " + (v.ignition === "A" ? "açık" : "kapalı"), "");
+    if (v.idleSpeed === "A") h += chip("Rölanti", "idle");
+    if (v.vehicleLabel) h += chip(v.vehicleLabel, "");
+    h += "</div></div>";
     h +=
       '<div class="pop-since"' + (stale ? ' style="color:#c0392b"' : "") + ">" +
       (Number.isFinite(age) ? "Son veri: " + humanAge(age) : "Son veri zamanı bilinmiyor") +
       "</div>";
 
-    h += '<div class="pop-foot pop-foot-2">';
+    h += '<div class="pop-foot pop-foot-row">';
     if (v.muId) {
       h +=
         '<button type="button" class="trk-btn" data-mu="' + v.muId +
         '" data-plate="' + G.escapeHtml(v.plate || "") + '">Son 6 saat izi</button>';
     }
+    h += dirButtonInner(v.latitude, v.longitude, v.plate || "Araç");
     h += "</div>";
-    return h + dirButton(v.latitude, v.longitude, v.plate || "Araç");
+    return h;
+  }
+
+  function chip(metin, sinif) {
+    return '<span class="vchip ' + (sinif || "") + '">' + G.escapeHtml(metin) + "</span>";
   }
 
   function row(k, val) {
@@ -896,73 +906,6 @@
         console.warn("arac servisi:", e);
       })
       .then(function () { vehicleLoading = false; });
-  }
-
-  /* Ilk acilista yonu bilinmeyen hareketli araclar icin son yarim saatin
-     konumlarindan yon hesapla. Saglayici es zamanli tek istek kabul ettigi
-     icin sirayla ve sinirli sayida yapilir. */
-  var bootstrapping = false;
-
-  function bootstrapHeadings() {
-    var base = vehicleServiceUrl();
-    if (!base || bootstrapping || !active.vehicle) return;
-
-    var eksik = Object.keys(vehicleMarkers)
-      .map(function (id) { return vehicleMarkers[id]; })
-      .filter(function (rec) {
-        return (
-          !rec.bootstrapped &&
-          rec.data && rec.data.muId &&
-          isMoving(rec.data) &&
-          ageMs(rec.data) <= STALE_MS &&
-          !rec.headingFromMovement          // hareketten hesaplanmis yon yoksa
-        );
-      })
-      .slice(0, 10);
-
-    if (!eksik.length) return;
-    bootstrapping = true;
-
-    var end = new Date();
-    var start = new Date(Date.now() - 30 * 60000);
-
-    var sira = eksik.reduce(function (zincir, rec) {
-      return zincir.then(function () {
-        rec.bootstrapped = true;
-        var qs = new URLSearchParams({
-          muId: String(rec.data.muId),
-          startTime: apiTime(start),
-          endTime: apiTime(end),
-        });
-        return fetch(base + "/locations?" + qs.toString(), { cache: "no-store" })
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (j) {
-            var pts = (j && Array.isArray(j.data) ? j.data : [])
-              .filter(function (p) {
-                return Number.isFinite(p.latitude) && Number.isFinite(p.longitude);
-              })
-              .sort(function (a, b) { return Date.parse(a.time) - Date.parse(b.time); });
-            if (pts.length < 2) return;
-
-            // sondan geriye dogru, anlamli mesafedeki ilk noktayi bul
-            var son = pts[pts.length - 1];
-            for (var i = pts.length - 2; i >= 0; i--) {
-              var b = bearing(pts[i].latitude, pts[i].longitude, son.latitude, son.longitude);
-              if (b !== null) {
-                var id = rec.data.plate || String(rec.data.muId);
-                rec.lastHeading = b;
-                rec.headingFromMovement = true;
-                saveHeading(id, b);
-                rec.marker.setIcon(vehicleIcon(rec.data));
-                break;
-              }
-            }
-          })
-          .catch(function () { /* yon bulunamadi, sorun degil */ });
-      });
-    }, Promise.resolve());
-
-    sira.then(function () { bootstrapping = false; });
   }
 
   function drawVehicles(list) {
@@ -1025,7 +968,6 @@
     });
     updateSummary(lastVehicles);
     applyStatusFilter();
-    bootstrapHeadings();
     if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
   }
 

@@ -457,7 +457,6 @@ h1.title {
 .pop-site span { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
 .pop-site.at b { color: var(--accent); }
 
-.pop-foot-2 { padding: 0 15px 10px; }
 .trk-btn {
   width: 100%; padding: 8px; border-radius: 7px; cursor: pointer;
   border: 1px solid var(--line); background: var(--panel); color: var(--ink-deep);
@@ -683,3 +682,34 @@ h1.title {
   .leaflet-control-zoom { margin-top: 78px !important; margin-left: 8px !important; }
   .leaflet-control-zoom a { width: 30px !important; height: 30px !important; line-height: 30px !important; }
 }
+
+/* ---------- balon yuksekligi ----------
+   Balon cok uzun olunca Leaflet haritayi kaydirip isaretciyi ekran disina
+   itiyordu. Yukseklik goruntu alanina gore sinirlandi; icerik gerekirse
+   kendi icinde kayiyor. */
+.pop-body { max-height: min(300px, 30vh); }
+.pop-foot-row { display: flex; gap: 8px; }
+.pop-foot-row .trk-btn,
+.pop-foot-row .dir-btn { flex: 1; margin: 0; }
+
+@media (max-width: 760px) {
+  .pop-head { padding: 10px 12px; }
+  .pop-site { padding: 7px 12px; font-size: 11.5px; }
+  .pop-body { padding: 9px 12px; max-height: 22vh; }
+  .pop-since { padding: 0 12px 9px; }
+  .pop-foot, .pop-foot-row { padding: 0 12px 10px; }
+  .pop-foot-row { gap: 6px; }
+  .dir-btn, .trk-btn { padding: 9px 6px; font-size: 11.5px; }
+  .emp-list li { padding: 3px 0; font-size: 12px; }
+}
+
+/* arac balonunda durum bilgisi: liste yerine tek satir kucuk etiketler */
+.pop-body-veh { padding-top: 10px; padding-bottom: 10px; }
+.veh-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.vchip {
+  font-family: 'Inter', sans-serif; font-size: 11px; color: var(--steel);
+  background: var(--bg-soft); border: 1px solid var(--line);
+  border-radius: 20px; padding: 3px 9px; white-space: nowrap;
+}
+.vchip.go { color: #2ecc71; border-color: rgba(46,204,113,.35); }
+.vchip.idle { color: #e8a33d; border-color: rgba(232,163,61,.35); }

@@ -96,6 +96,13 @@ Aracın en yakın kule/kuyu/tesise uzaklığı tarayıcıda hesaplanır (haversi
 Ok/kare ikilisi "git / dur" okumasını veriyor; küçük boyutta siluetleri
 birbirine karışmıyor.
 
+### Balon yüksekliği
+
+Balon uzun olunca Leaflet haritayı kaydırıp işaretçiyi ekran dışına itiyordu.
+Araç balonundaki durum listesi tek satır etiketlere indirildi, "Son 6 saat izi"
+ve "Yol Tarifi" yan yana alındı; gövde yüksekliği `vh` ile sınırlandı.
+Araç balonu 405 px → 233 px.
+
 ### Seçili işaretçi
 
 Balonu açık olan işaretçinin etrafında sürekli genişleyen iki halka
