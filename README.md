@@ -83,6 +83,25 @@ servisin arkasında.
 Aracın en yakın kule/kuyu/tesise uzaklığı tarayıcıda hesaplanır (haversine).
 1 km altı "sahasında", 6 km altı "yakınında", üstü "en yakın: X".
 
+### Araç simgeleri
+
+Üç durum, üç ayrı biçim:
+
+| Durum | Simge |
+|---|---|
+| Hareketli, yön biliniyor | ok (yön açısıyla döner) |
+| Hareketli, yön bilinmiyor | yönsüz daire |
+| Duruyor | kare |
+
+Ok/kare ikilisi "git / dur" okumasını veriyor; küçük boyutta siluetleri
+birbirine karışmıyor.
+
+### Seçili işaretçi
+
+Balonu açık olan işaretçinin etrafında sürekli genişleyen iki halka
+(`gyp-ripple`). Halkalar `.gyp-marker` üzerine konuldu; `.chip` içinde
+`overflow: hidden` olduğu için orada kırpılıyordu.
+
 ### Araç yönü
 
 Ok yalnızca yön biliniyorsa çizilir:

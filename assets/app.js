@@ -736,9 +736,19 @@
     var s = Math.round(iconSize() * 0.86);
     var yon = moving ? heading(v) : null;
 
-    // yon biliniyorsa ok, bilinmiyorsa yonsuz simge (mavi halka hareketi belli eder)
-    var glyph = yon === null ? G.GLYPHS.vehicleIdle : G.GLYPHS.vehicle;
-    var rot = yon === null ? "" : ' style="transform:rotate(' + Math.round(yon) + 'deg)"';
+    /* uc durum:
+       hareketli + yon biliniyor  -> ok (yon acisiyla dondurulur)
+       hareketli + yon bilinmiyor -> yonsuz daire
+       duruyor                    -> kare */
+    var glyph, rot = "";
+    if (!moving) {
+      glyph = G.GLYPHS.vehicleIdle;
+    } else if (yon === null) {
+      glyph = G.GLYPHS.vehicleUnknown;
+    } else {
+      glyph = G.GLYPHS.vehicle;
+      rot = ' style="transform:rotate(' + Math.round(yon) + 'deg)"';
+    }
 
     return L.divIcon({
       className: "gyp-marker",
@@ -975,12 +985,26 @@
         }
         rec.data = v;
         rec.marker.setLatLng(ll);
+        var acikti = rec.marker.isPopupOpen && rec.marker.isPopupOpen();
         rec.marker.setIcon(vehicleIcon(v));
+        if (acikti) {
+          var el = rec.marker.getElement();
+          if (el) el.classList.add("is-active");   // yenilemede secili durum kaybolmasin
+        }
         rec.marker.setPopupContent(vehiclePopupHtml(v));
       } else {
         var mk = L.marker(ll, { icon: vehicleIcon(v), riseOnHover: true, zIndexOffset: 400 })
           .bindPopup(vehiclePopupHtml(v), { closeButton: true, autoPanPadding: [30, 30] })
           .bindTooltip(id, { permanent: false, direction: "top", className: "gyp-label" });
+        // secili durumu (ve dalga efektini) araclara da uygula
+        mk.on("popupopen", function () {
+          var el = mk.getElement();
+          if (el) el.classList.add("is-active");
+        });
+        mk.on("popupclose", function () {
+          var el = mk.getElement();
+          if (el) el.classList.remove("is-active");
+        });
         vehicleMarkers[id] = { marker: mk, data: v };
       }
     });

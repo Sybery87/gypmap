@@ -200,6 +200,30 @@ h1.title {
 }
 .chip svg { width: 72%; height: auto; }
 .gyp-marker:hover .chip { transform: scale(1.13); }
+/* secili isaretcinin etrafinda surekli dalga.
+   .chip'te overflow:hidden var, bu yuzden dalga dis katmana konuldu. */
+.gyp-marker.is-active::before,
+.gyp-marker.is-active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  z-index: -1;
+  animation: gyp-ripple 2.4s cubic-bezier(.22, .61, .36, 1) infinite;
+}
+.gyp-marker.is-active::after { animation-delay: 1.2s; }
+@keyframes gyp-ripple {
+  0%   { transform: scale(1);   opacity: .6; }
+  60%  { opacity: .18; }
+  100% { transform: scale(3.1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gyp-marker.is-active::before,
+  .gyp-marker.is-active::after { animation: none; opacity: 0; }
+}
+
 .gyp-marker.is-active .chip { background: #06205c; border-color: #06205c; }
 .chip .gl { fill: #06205c; transition: fill .15s ease; }
 .chip .void { fill: #fff; transition: fill .15s ease; }

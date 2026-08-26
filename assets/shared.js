@@ -42,14 +42,18 @@
       '<path class="gl" d="M10.2,15.4 L13,15.4" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
       '<path class="gl" d="M5.8,6.2 L5.8,3.2 L16.7,3.2 L16.7,9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
       "</svg>",
-    // ok yukari bakar; hareket halindeki arac icin yon acisiyla dondurulur.
-    // kare viewBox: donerken merkez kaymasin
+    // hareket halinde + yon biliniyor: ok (yon acisiyla dondurulur)
     vehicle:
       '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
       '<path class="gl" d="M12,3.4 L19,20.6 L12,16.6 L5,20.6 Z"/>' +
       "</svg>",
-    // duran arac icin yonu belirsiz, dolu daire
+    // duruyor: kare — ok ile "git / dur" ikilisi olusturur
     vehicleIdle:
+      '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
+      '<rect class="gl" x="6.6" y="6.6" width="10.8" height="10.8" rx="2.4"/>' +
+      "</svg>",
+    // hareket halinde ama yon bilinmiyor: yonsuz daire
+    vehicleUnknown:
       '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
       '<circle class="gl" cx="12" cy="12" r="6.2"/>' +
       '<circle class="void" cx="12" cy="12" r="2.4"/>' +
