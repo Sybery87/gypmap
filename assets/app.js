@@ -216,7 +216,7 @@
       html = html.replace('class="pj"', 'class="pj" style="animation-delay:' + d + 's"');
     }
     return L.divIcon({
-      className: "gyp-marker",
+      className: "gyp-marker cat-" + kind,
       html: '<div class="chip">' + html + "</div>",
       iconSize: [s, s],
       iconAnchor: [s / 2, s / 2],
@@ -241,10 +241,17 @@
   }
 
   // popup acilinca renk degisir, cift tik yakinlastirir
-  function wireMarker(mk, latlng, label) {
+  function wireMarker(mk, latlng, label, rec) {
     mk.on("add", function () {
       var el = mk.getElement();
       if (el) el.title = label;
+    });
+    // ust uste binmisse once grubu ac, balonu acma
+    mk.on("click", function (e) {
+      if (rec && !spiderAcik.length && spiderAc(rec)) {
+        L.DomEvent.stop(e);
+        mk.closePopup();
+      }
     });
     mk.on("popupopen", function () {
       var el = mk.getElement();
@@ -256,6 +263,7 @@
     });
     mk.on("dblclick", function (e) {
       L.DomEvent.stop(e);
+      spiderKapat();
       map.flyTo(latlng, Math.min(map.getMaxZoom(), Math.max(map.getZoom(), 15)), { duration: 0.8 });
     });
   }
@@ -369,11 +377,12 @@
         .addTo(markerLayer)
         .bindPopup(facilityPopupHtml(f), { closeButton: true, autoPanPadding: [30, 30] })
         .bindTooltip(f.name, { permanent: true, direction: "right", offset: [17, 0], className: "gyp-label fx" });
-      wireMarker(mk, ll, f.name);
-      markers.push({
+      var recF = {
         marker: mk, label: f.name, kind: "fx", kindIcon: f.type,
         cat: f.type, weight: 100, latlng: ll,
-      });
+      };
+      wireMarker(mk, ll, f.name, recF);
+      markers.push(recF);
     });
 
     (data.productionSites || []).forEach(function (s) {
@@ -382,11 +391,12 @@
         .addTo(markerLayer)
         .bindPopup(productionPopupHtml(s), { closeButton: true, autoPanPadding: [30, 30] })
         .bindTooltip(s.name, { permanent: true, direction: "right", offset: [17, 0], className: "gyp-label" });
-      wireMarker(mk, ll, s.name);
-      markers.push({
+      var recP = {
         marker: mk, label: s.name, kind: "rig", kindIcon: "production",
         cat: "production", weight: 20, latlng: ll,
-      });
+      };
+      wireMarker(mk, ll, s.name, recP);
+      markers.push(recP);
     });
 
     data.rigs.forEach(function (r, i) {
@@ -395,12 +405,13 @@
         .addTo(markerLayer)
         .bindPopup(rigPopupHtml(r), { closeButton: true, autoPanPadding: [30, 30] })
         .bindTooltip(r.name, { permanent: true, direction: "right", offset: [17, 0], className: "gyp-label" });
-      wireMarker(mk, ll, r.name);
-      markers.push({
+      var recR = {
         marker: mk, label: r.name, kind: "rig", kindIcon: "rig", cat: "rig", seed: i,
         weight: r.employees && r.employees.length ? 50 : 10,
         latlng: ll,
-      });
+      };
+      wireMarker(mk, ll, r.name, recR);
+      markers.push(recR);
 
       if (r.previous && typeof r.previous.lat === "number" && typeof r.previous.lon === "number") {
         var moved = Math.abs(r.previous.lat - r.lat) > 0.01 || Math.abs(r.previous.lon - r.lon) > 0.01;
@@ -756,7 +767,7 @@
     }
 
     return L.divIcon({
-      className: "gyp-marker",
+      className: "gyp-marker cat-vehicle",
       html:
         '<div class="chip vehicle' + (stale ? " stale" : "") + (moving ? " moving" : "") + '">' +
         "<span" + rot + ">" + glyph + "</span></div>",
@@ -1098,6 +1109,25 @@
       radius: 6, color: "#fff", weight: 2, fillColor: "#4fa6f0", fillOpacity: 1,
     }).addTo(trackLayer);
 
+    // iz uzerine aralikli yon oklari: hangi yone gidildigi belli olsun
+    var adim = Math.max(1, Math.floor(pts.length / 7));
+    for (var i = adim; i < pts.length; i += adim) {
+      var a = pts[i - 1], b2 = pts[i];
+      var yon = bearing(a.lat, a.lon, b2.lat, b2.lon);
+      if (yon === null) continue;
+      L.marker([b2.lat, b2.lon], {
+        interactive: false,
+        icon: L.divIcon({
+          className: "trk-arrow",
+          html: '<span style="transform:rotate(' + Math.round(yon) + 'deg)">' +
+                '<svg viewBox="0 0 24 24" width="11" height="11">' +
+                '<path d="M12 4 L18 19 L12 15.5 L6 19 Z" fill="#cfe6ff"/></svg></span>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        }),
+      }).addTo(trackLayer);
+    }
+
     map.fitBounds(L.latLngBounds(latlngs).pad(0.15));
     showTimeline(plate, hours);
   }
@@ -1413,10 +1443,16 @@
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    // hicbiri secili degilse "Tumu" dikkat cekmeye devam etsin
+    var tumu = document.querySelector('.filter[data-key="all"]');
+    if (tumu) {
+      tumu.classList.toggle("hint", CATEGORIES.every(function (c) { return !active[c.key]; }));
+    }
     updateBarSummary();
   }
 
   function applyFilters() {
+    spiderKapat();
     markers.forEach(function (m) {
       var want = !!active[m.cat];
       var on = markerLayer.hasLayer(m.marker);
@@ -1450,6 +1486,64 @@
     }
 
     declutter();
+  }
+
+  /* ---------- ust uste binen isaretcileri acma ----------
+     Yakin sahalarda ikonlar tek yumak oluyor. Bir tanesine tiklandiginda
+     grup daire seklinde acilir, her biri merkeze ince bir cizgiyle baglanir.
+     Zoom/kaydirma veya bosluga tiklama kapatir. */
+  var SPIDER_PX = 30;          // bu piksel mesafeden yakinsa ayni gruptur
+  var spiderLayer = null;
+  var spiderAcik = [];         // { m, orijinal }
+  var spiderMesgul = false;    // acilirken tetiklenen harita olaylari kapatmasin
+
+  function spiderKapat() {
+    if (spiderMesgul) return;
+    if (!spiderAcik.length) return;
+    spiderAcik.forEach(function (it) { it.m.marker.setLatLng(it.orijinal); });
+    spiderAcik = [];
+    if (spiderLayer) { map.removeLayer(spiderLayer); spiderLayer = null; }
+    declutter();
+  }
+
+  function spiderGrubu(hedef) {
+    var p0 = map.latLngToContainerPoint(hedef.latlng);
+    return markers.filter(function (m) {
+      if (!markerLayer.hasLayer(m.marker)) return false;
+      var p = map.latLngToContainerPoint(m.latlng);
+      return Math.hypot(p.x - p0.x, p.y - p0.y) <= SPIDER_PX;
+    });
+  }
+
+  function spiderAc(hedef) {
+    var grup = spiderGrubu(hedef);
+    if (grup.length < 2) return false;
+
+    spiderKapat();
+    map.closePopup();          // acik balon autoPan tetikleyip grubu kapatiyordu
+    spiderMesgul = true;
+    spiderLayer = L.layerGroup().addTo(map);
+
+    // grubun ortasi
+    var pts = grup.map(function (m) { return map.latLngToContainerPoint(m.latlng); });
+    var cx = pts.reduce(function (a, p) { return a + p.x; }, 0) / pts.length;
+    var cy = pts.reduce(function (a, p) { return a + p.y; }, 0) / pts.length;
+    var merkez = L.point(cx, cy);
+    var r = Math.max(38, 13 * grup.length);
+
+    grup.forEach(function (m, i) {
+      var aci = (2 * Math.PI * i) / grup.length - Math.PI / 2;
+      var hedefP = L.point(cx + r * Math.cos(aci), cy + r * Math.sin(aci));
+      var yeni = map.containerPointToLatLng(hedefP);
+      spiderAcik.push({ m: m, orijinal: m.latlng });
+      L.polyline([map.containerPointToLatLng(merkez), yeni], {
+        color: "rgba(255,255,255,.55)", weight: 1.2, interactive: false,
+      }).addTo(spiderLayer);
+      m.marker.setLatLng(yeni);
+    });
+    spiderMesgul = false;
+    declutter();
+    return true;
   }
 
   /* ---------- kontroller ---------- */
@@ -1508,7 +1602,12 @@
       worldCopyJump: false,
     });
     map.fitBounds(TURKEY_BOUNDS, { padding: [24, 24] });
-    map.setMaxBounds(TURKEY_BOUNDS.pad(0.6));
+    // Balon acilirken Leaflet haritayi kaydiriyor; sinir cok darsa kaydiramiyor
+    // ve balon ust kenardan tasiyor. Pay genis tutuldu.
+    // Dar/uzun telefon ekranlarinda gorunur alan sinirlardan yuksek kalinca
+    // Leaflet dikey kaydirmayi tamamen kilitliyor ve balon ust kenardan
+    // tasiyordu. Pay bol tutuldu.
+    map.setMaxBounds(TURKEY_BOUNDS.pad(2.4));
 
     buildBaseLayers();
     switchBase(G.readTheme() === "dark" ? "night" : "day");
@@ -1522,6 +1621,8 @@
     map.on("moveend", updateZoomCap);
     updateZoomCap();
     map.on("zoomend", refreshIconSizes);
+    map.on("zoomstart dragstart", spiderKapat);
+    map.on("click", spiderKapat);
     map.on("zoomend moveend resize", declutter);
     map.on("zoomend", applyLayer);
 
@@ -1546,16 +1647,23 @@
       .then(function (json) {
         data = json;
         render();
+        bitir();
         // arac sayaci filtre acilmadan da dolsun (servis onbellekli, ucuz)
         loadVehicles(true);
       })
       .catch(function (err) {
+        bitir();
         document.getElementById("load-error").style.display = "block";
         document.getElementById("load-error").textContent =
           "Veri yüklenemedi: " + err.message +
           " — Sayfayı bir web sunucusu üzerinden açtığınızdan emin olun.";
         console.error(err);
       });
+  }
+
+  function bitir() {
+    var el = document.getElementById("load-bar");
+    if (el) el.classList.add("done");
   }
 
   function setThemeIconOnly(theme) {

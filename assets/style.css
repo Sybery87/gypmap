@@ -14,6 +14,12 @@
   --ghost: #c6cdda;
   --mask: #dbe6ee;
   --border-stroke: rgba(255, 255, 255, .85);
+  /* tur renkleri: harita bir bakista okunsun */
+  --c-rig: #06205C;         /* kule */
+  --c-production: #0F7B78;  /* uretim kuyusu */
+  --c-workshop: #B26A12;    /* kamp / atolye */
+  --c-office: #2A5FBF;      /* ofis */
+  --c-vehicle: #0971CE;     /* arac */
 }
 
 [data-theme="dark"] {
@@ -30,6 +36,12 @@
   --ghost: #3a4e71;
   --mask: #02060f;
   --border-stroke: rgba(125, 190, 255, .55);
+  /* koyu zeminde biraz daha parlak tonlar */
+  --c-rig: #0A2E7A;
+  --c-production: #0F8F8B;
+  --c-workshop: #C97C1B;
+  --c-office: #3672DB;
+  --c-vehicle: #2E93E8;
 }
 
 * { box-sizing: border-box; }
@@ -147,7 +159,14 @@ h1.title {
   display: flex; align-items: center; justify-content: center; flex: none;
 }
 .filter-icon svg { width: 74%; height: auto; }
-.filter-icon .gl { fill: #06205c; }
+.filter-icon .gl { fill: var(--cat, #06205c); }
+.filter[data-key="rig"]        { --cat: var(--c-rig); }
+.filter[data-key="production"] { --cat: var(--c-production); }
+.filter[data-key="workshop"]   { --cat: var(--c-workshop); }
+.filter[data-key="office"]     { --cat: var(--c-office); }
+.filter[data-key="vehicle"]    { --cat: var(--c-vehicle); }
+.filter.on { border-color: var(--cat, var(--accent)); }
+.filter.on .filter-count { background: var(--cat, var(--ink)); color: #fff; }
 .filter-icon .void { fill: #fff; }
 .filter-count {
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
@@ -208,7 +227,7 @@ h1.title {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--cat, var(--accent));
   pointer-events: none;
   z-index: -1;
   animation: gyp-ripple 2.4s cubic-bezier(.22, .61, .36, 1) infinite;
@@ -224,11 +243,18 @@ h1.title {
   .gyp-marker.is-active::after { animation: none; opacity: 0; }
 }
 
-.gyp-marker.is-active .chip { background: #06205c; border-color: #06205c; }
-.chip .gl { fill: #06205c; transition: fill .15s ease; }
+/* her tur kendi rengini tasir; --cat degiskeni uzerinden */
+.cat-rig        { --cat: var(--c-rig); }
+.cat-production { --cat: var(--c-production); }
+.cat-workshop   { --cat: var(--c-workshop); }
+.cat-office     { --cat: var(--c-office); }
+.cat-vehicle    { --cat: var(--c-vehicle); }
+
+.gyp-marker.is-active .chip { background: var(--cat, #06205c); border-color: var(--cat, #06205c); }
+.chip .gl { fill: var(--cat, #06205c); transition: fill .15s ease; }
 .chip .void { fill: #fff; transition: fill .15s ease; }
 .gyp-marker.is-active .chip .gl { fill: #fff; }
-.gyp-marker.is-active .chip .void { fill: #06205c; }
+.gyp-marker.is-active .chip .void { fill: var(--cat, #06205c); }
 .pj { animation: pj-rock 2.4s ease-in-out infinite alternate; transform-origin: 12.2px 7.45px; }
 @keyframes pj-rock { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
 @media (prefers-reduced-motion: reduce) { .pj { animation: none; } }
@@ -713,3 +739,101 @@ h1.title {
 }
 .vchip.go { color: #2ecc71; border-color: rgba(46,204,113,.35); }
 .vchip.idle { color: #e8a33d; border-color: rgba(232,163,61,.35); }
+
+/* ---------- yukleme cizgisi ---------- */
+.load-bar {
+  height: 2px; flex: none; background: transparent; overflow: hidden; position: relative;
+}
+.load-bar::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: load-slide 1.1s ease-in-out infinite;
+}
+.load-bar.done { height: 0; }
+.load-bar.done::after { animation: none; }
+@keyframes load-slide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* ---------- balon acilis animasyonu ---------- */
+.leaflet-popup {
+  animation: pop-in .17s cubic-bezier(.2, .8, .3, 1);
+  transform-origin: 50% 100%;
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(7px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- hicbir katman secili degilken "Tumu" dikkat ceksin ---------- */
+.filter.all.hint {
+  opacity: 1;
+  animation: hint-pulse 2.6s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(9, 113, 206, 0); border-color: var(--line); }
+  50%      { box-shadow: 0 0 0 4px rgba(9, 113, 206, .16); border-color: var(--accent); }
+}
+
+/* ---------- iz uzerindeki yon oklari ---------- */
+.trk-arrow { background: none !important; border: none !important; }
+.trk-arrow span { display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,.7)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .load-bar::after, .filter.all.hint, .leaflet-popup { animation: none; }
+}
+
+/* ---------- aydinlik tema: uydu goruntusu uzerinde okunurluk ---------- */
+html[data-theme="light"] .gyp-marker .chip {
+  border-width: 2px;
+  border-color: rgba(6, 32, 92, .5);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, .38);
+}
+[data-theme="light"] .ghost-dot {
+  border-color: rgba(255, 255, 255, .95);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+}
+[data-theme="light"] .gyp-label {
+  color: #0b1c3a;
+  text-shadow: 0 0 3px rgba(255,255,255,.95), 0 0 7px rgba(255,255,255,.85), 0 1px 2px rgba(255,255,255,.9);
+}
+[data-theme="light"] .legend,
+[data-theme="light"] .veh-summary .vs-pill,
+[data-theme="light"] .veh-panel-btn,
+[data-theme="light"] .layerbox,
+[data-theme="light"] .zoom-hint {
+  box-shadow: 0 3px 12px rgba(6, 32, 92, .18);
+  border-color: rgba(6, 32, 92, .16);
+}
+[data-theme="light"] .leaflet-popup-content-wrapper,
+[data-theme="light"] .veh-panel,
+[data-theme="light"] .timeline {
+  box-shadow: 0 12px 34px rgba(6, 32, 92, .22);
+}
+[data-theme="light"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, .82) !important; color: #35435e !important;
+}
+[data-theme="light"] .leaflet-control-attribution a { color: #1c4fa1 !important; }
+
+/* Balon, harita ustundeki rozet/butonlarin ustunde kalsin;
+   yan panel ve zaman cizelgesi ise balonun ustunde. */
+.leaflet-pane.leaflet-popup-pane { z-index: 1080; }
+
+/* Kisa ekranlarda balon, isaretcinin ustunde kalan bosluga sigmiyordu.
+   Yukseklige gore de sikilastiriliyor. */
+@media (max-height: 720px), (max-width: 400px) {
+  .pop-head { padding: 8px 12px; }
+  .pop-title { font-size: 14px; }
+  .pop-city { font-size: 10px; margin-top: 2px; }
+  .pop-site { padding: 6px 12px; font-size: 11px; }
+  .pop-body { padding: 8px 12px; max-height: 20vh; }
+  .sec-label { font-size: 9px; margin-bottom: 5px; }
+  .pop-address { font-size: 11.5px; line-height: 1.35; }
+  .empty-note { font-size: 11.5px; padding-bottom: 4px; }
+  .pop-since { font-size: 9.5px; padding: 0 12px 8px; }
+  .pop-foot, .pop-foot-row { padding: 0 12px 9px; }
+  .dir-btn, .trk-btn { padding: 8px 6px; font-size: 11px; }
+  .leaflet-popup-content { width: 224px !important; }
+}

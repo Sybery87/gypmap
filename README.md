@@ -103,6 +103,29 @@ Araç balonundaki durum listesi tek satır etiketlere indirildi, "Son 6 saat izi
 ve "Yol Tarifi" yan yana alındı; gövde yüksekliği `vh` ile sınırlandı.
 Araç balonu 405 px → 233 px.
 
+### Renk kodu
+
+Her tür kendi rengini taşır (`--c-rig`, `--c-production`, `--c-workshop`,
+`--c-office`, `--c-vehicle`). İşaretçi `cat-*` sınıfıyla işaretlenir, renk
+`--cat` değişkeni üzerinden ikona, seçili dolgusuna ve dalgaya aktarılır.
+Filtre rozetleri de aynı renkleri kullanır, bağ kurulsun diye.
+
+### Üst üste binen işaretçiler
+
+Yakın sahalar (Zeynel, Dirsekli grupları) tek yumak oluyordu. Bir tanesine
+tıklayınca grup daire şeklinde açılır, her biri merkeze ince çizgiyle bağlanır.
+Zoom / sürükleme / boşluğa tıklama kapatır.
+
+İki tuzak vardı: işaretçileri taşımak haritayı kaydırıp açılışı hemen geri
+kapatıyordu (`spiderMesgul` bayrağı ve `movestart` yerine `dragstart`), ve açık
+bir balon autoPan tetikliyordu (açmadan önce `map.closePopup()`).
+
+### Harita kaydırma sınırı
+
+`maxBounds` dar tutulunca, dar ve uzun telefon ekranlarında görünür alan
+sınırlardan yüksek kalıyor ve Leaflet dikey kaydırmayı tamamen kilitliyordu.
+Sonuç: balon üst kenardan taşıyor, işaretçi görünmüyordu. Pay `pad(2.4)`.
+
 ### Seçili işaretçi
 
 Balonu açık olan işaretçinin etrafında sürekli genişleyen iki halka
