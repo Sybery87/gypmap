@@ -5,12 +5,12 @@
   var GLYPHS = {
     rig:
       '<svg viewBox="0 0 24 20" width="20" height="17" aria-hidden="true">' +
-      '<rect class="gl" x="2.4" y="16.6" width="19.2" height="1.9" rx="0.75"/>' +
-      '<path class="gl" d="M8.4,16.6 L12.2,7.4 L16,16.6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>' +
+      '<rect class="gl" x="2.9" y="15.05" width="19.2" height="1.9" rx="0.75"/>' +
+      '<path class="gl" d="M8.9,15.05 L12.7,5.85 L16.5,15.05" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>' +
       '<g class="pj">' +
-      '<rect class="gl" x="2.6" y="6.5" width="19" height="1.9" rx="0.95"/>' +
-      '<path class="gl" d="M3,7.45 L3,4.9 A2.5,2.5 0 0,0 0.9,8.4 L3,8.4 Z"/>' +
-      '<circle class="gl" cx="19.6" cy="7.45" r="2.8"/>' +
+      '<rect class="gl" x="3.1" y="4.95" width="19" height="1.9" rx="0.95"/>' +
+      '<path class="gl" d="M3.5,5.9 L3.5,3.35 A2.5,2.5 0 0,0 1.4,6.85 L3.5,6.85 Z"/>' +
+      '<circle class="gl" cx="20.1" cy="5.9" r="2.8"/>' +
       "</g></svg>",
     office:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
@@ -25,22 +25,22 @@
       "</svg>",
     workshop:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
-      '<path class="gl" d="M1.6,18.4 L1.6,9.4 L7,6.2 L7,9.4 L12.4,6.2 L12.4,9.4 L17.8,6.2 L17.8,18.4 Z"/>' +
-      '<rect class="gl" x="19.4" y="2.6" width="3" height="15.8" rx="1"/>' +
-      '<rect class="void" x="4" y="11.6" width="2.6" height="2.4" rx="0.6"/>' +
-      '<rect class="void" x="8.6" y="11.6" width="2.6" height="2.4" rx="0.6"/>' +
-      '<rect class="void" x="13.2" y="11.6" width="2.6" height="2.4" rx="0.6"/>' +
-      '<rect class="void" x="8.6" y="15.4" width="2.6" height="3" rx="0.5"/>' +
+      '<path class="gl" d="M1.6,17.4 L1.6,8.4 L7,5.2 L7,8.4 L12.4,5.2 L12.4,8.4 L17.8,5.2 L17.8,17.4 Z"/>' +
+      '<rect class="gl" x="19.4" y="2.6" width="3" height="14.8" rx="1"/>' +
+      '<rect class="void" x="4" y="10.6" width="2.6" height="2.4" rx="0.6"/>' +
+      '<rect class="void" x="8.6" y="10.6" width="2.6" height="2.4" rx="0.6"/>' +
+      '<rect class="void" x="13.2" y="10.6" width="2.6" height="2.4" rx="0.6"/>' +
+      '<rect class="void" x="8.6" y="14.4" width="2.6" height="3" rx="0.5"/>' +
       "</svg>",
     production:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
-      '<rect class="gl" x="1.4" y="6.2" width="8.8" height="12.2" rx="1.5"/>' +
-      '<rect class="gl" x="13" y="9" width="7.4" height="9.4" rx="1.4"/>' +
-      '<rect class="void" x="3.4" y="8.6" width="4.8" height="1.5" rx="0.75"/>' +
-      '<rect class="void" x="3.4" y="12" width="4.8" height="1.5" rx="0.75"/>' +
-      '<rect class="void" x="14.8" y="11.4" width="3.8" height="1.4" rx="0.7"/>' +
-      '<path class="gl" d="M10.2,15.4 L13,15.4" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
-      '<path class="gl" d="M5.8,6.2 L5.8,3.2 L16.7,3.2 L16.7,9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<rect class="gl" x="2.6" y="5.6" width="8.8" height="12.2" rx="1.5"/>' +
+      '<rect class="gl" x="14.2" y="8.4" width="7.4" height="9.4" rx="1.4"/>' +
+      '<rect class="void" x="4.6" y="8" width="4.8" height="1.5" rx="0.75"/>' +
+      '<rect class="void" x="4.6" y="11.4" width="4.8" height="1.5" rx="0.75"/>' +
+      '<rect class="void" x="16" y="10.8" width="3.8" height="1.4" rx="0.7"/>' +
+      '<path class="gl" d="M11.4,14.8 L14.2,14.8" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+      '<path class="gl" d="M7,5.6 L7,2.6 L17.9,2.6 L17.9,8.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
       "</svg>",
     // hareket halinde + yon biliniyor: ok (yon acisiyla dondurulur)
     vehicle:

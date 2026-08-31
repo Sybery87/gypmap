@@ -199,12 +199,14 @@
 
   /* ---------- işaretçiler ---------- */
   // uzakta kucult, yakinda buyut
+  /* Boyutlar daima CIFT: tek sayida yerlesim payi (boyut/2) yarim piksele
+     dusuyor ve ikon hafifce kayik gorunuyor. */
   function iconSize() {
     var compact = G.isCompact();
     var z = map ? map.getZoom() : 6;
-    if (z <= 6) return compact ? 15 : 19;
+    if (z <= 6) return compact ? 16 : 20;
     if (z <= 8) return compact ? 18 : 24;
-    return compact ? 21 : 28;
+    return compact ? 20 : 28;
   }
 
   function makeIcon(kind, s, seed) {
@@ -236,6 +238,17 @@
       if (el) {
         el.title = m.label;
         if (wasActive) el.classList.add("is-active");
+      }
+    });
+
+    // arac ikonlari da olcege uysun; eskiden ilk boyutta kaliyorlardi
+    Object.keys(vehicleMarkers).forEach(function (id) {
+      var rec = vehicleMarkers[id];
+      var acikti = rec.marker.isPopupOpen && rec.marker.isPopupOpen();
+      rec.marker.setIcon(vehicleIcon(rec.data));
+      if (acikti) {
+        var vel = rec.marker.getElement();
+        if (vel) vel.classList.add("is-active");
       }
     });
   }
@@ -438,7 +451,6 @@
     if (siteEl) siteEl.textContent = (data.productionSites || []).length;
     var counts = { rig: 0, office: 0, workshop: 0, production: 0 };
     markers.forEach(function (m) { counts[m.cat] = (counts[m.cat] || 0) + 1; });
-    counts.all = markers.length;
     Object.keys(counts).forEach(function (k) {
       var el = document.getElementById("cnt-" + k);
       if (el) el.textContent = counts[k];
@@ -655,7 +667,7 @@
   var vehicleMarkers = {};      // plaka -> marker
   var vehicleTimer = null;
   var vehicleLoading = false;
-  var REFRESH_MS = 120000;      // servis onbellegi 2 dk; daha sik sormanin anlami yok
+  var REFRESH_MS = 60000;       // yon hareketten hesaplandigi icin sik yenilemek gerekiyor
   var STALE_MS = 30 * 60000;    // 30 dk once veri gonderen arac "eski" sayilir
 
   function vehicleServiceUrl() {
@@ -668,13 +680,27 @@
      ok yerine yonsuz simge gosterilir (kuzeye bakan yaniltici ok cizmeyiz). */
   /* Saglayici yon gondermiyor; yonu aracin gittigi yoldan hesapliyoruz.
      Hesaplanan yon tarayiciya yazilir, boylece sayfa yenilense de kaybolmaz. */
-  var HEAD_KEY = "gyp-heading";
+  /* Yon deposu. Eski surumler saglayicidan gelen 0'i (tam kuzey sanip)
+     kaydediyordu; o kayitlar yuzunden tum oklar kuzeye donuyordu.
+     Anahtar degistirildi, eskisi siliniyor ve 0 artik gecersiz sayiliyor. */
+  var HEAD_KEY = "gyp-heading-v2";
+  try { localStorage.removeItem("gyp-heading"); } catch (e) {}
+
   var headStore = (function () {
-    try { return JSON.parse(localStorage.getItem(HEAD_KEY) || "{}"); } catch (e) { return {}; }
+    try {
+      var h = JSON.parse(localStorage.getItem(HEAD_KEY) || "{}");
+      // guvenlik: sifir degerler bilinmiyor demektir, temizle
+      Object.keys(h).forEach(function (k) { if (!h[k]) delete h[k]; });
+      return h;
+    } catch (e) { return {}; }
   })();
 
   function saveHeading(id, deg) {
-    headStore[id] = Math.round(deg);
+    var d = Math.round(deg);
+    if (!Number.isFinite(d)) return;
+    // 0 eski surumlerde "bilinmiyor" anlamina geliyordu; gercek kuzeyi
+    // ayirt edebilmek icin 360 olarak saklaniyor (donme acisi ayni).
+    headStore[id] = d === 0 ? 360 : d;
     try { localStorage.setItem(HEAD_KEY, JSON.stringify(headStore)); } catch (e) {}
   }
 
@@ -715,7 +741,8 @@
     if (rec && Number.isFinite(rec.lastHeading)) return rec.lastHeading;
 
     // 5) onceki ziyaretten hatirlanan yon
-    if (Number.isFinite(headStore[id])) {
+    // 5) onceki ziyaretten hatirlanan yon (0 = bilinmiyor sayilir)
+    if (Number.isFinite(headStore[id]) && headStore[id] !== 0) {
       if (rec) {
         rec.lastHeading = headStore[id];
         rec.headingFromMovement = true;
@@ -749,7 +776,7 @@
   function vehicleIcon(v) {
     var moving = isMoving(v);
     var stale = ageMs(v) > STALE_MS;
-    var s = Math.round(iconSize() * 0.86);
+    var s = iconSize() - 4;   // araclar bir tik kucuk, yine cift sayi
     var yon = moving ? heading(v) : null;
 
     /* uc durum:
@@ -1408,7 +1435,7 @@
     var html =
       '<button type="button" class="filter all" data-key="all" aria-pressed="false">' +
       '<span class="filter-icon">' + ALL_SVG + "</span>" +
-      '<span>Tümü</span><span class="filter-count" id="cnt-all">0</span></button>';
+      "<span>Tümü</span></button>";
 
     html += CATEGORIES.map(function (c) {
       return (

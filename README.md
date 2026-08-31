@@ -103,6 +103,22 @@ Araç balonundaki durum listesi tek satır etiketlere indirildi, "Son 6 saat izi
 ve "Yol Tarifi" yan yana alındı; gövde yüksekliği `vh` ile sınırlandı.
 Araç balonu 405 px → 233 px.
 
+### Simge hizasi
+
+Ikon boyutlari daima **cift sayi**: tek sayida yerlesim payi (boyut/2) yarim
+piksele dusuyor ve ikon kayik goruniyordu. Arac ikonlari ayrica zoom degisince
+tazelenmiyordu, ilk boyutta kaliyorlardi (`refreshIconSizes` icine eklendi).
+
+Simgelerin viewBox icindeki merkezleri olculup duzeltildi (atbasi, atolye ve
+uretim kuyusu kayikti). Yedisi de artik cizim sinirlarina gore tam ortali.
+
+### Yon deposu
+
+Eski surumler saglayicidan gelen `speedDirection: 0` degerini "tam kuzey" sanip
+kaydediyordu; bu kayitlar yuzunden yenilemeden sonra tum oklar kuzeye donuyordu.
+Anahtar `gyp-heading-v2` olarak degistirildi, eskisi siliniyor, 0 artik
+"bilinmiyor" sayiliyor ve gercek kuzey **360** olarak saklaniyor.
+
 ### Renk kodu
 
 Her tür kendi rengini taşır (`--c-rig`, `--c-production`, `--c-workshop`,
