@@ -667,7 +667,7 @@
   var vehicleMarkers = {};      // plaka -> marker
   var vehicleTimer = null;
   var vehicleLoading = false;
-  var REFRESH_MS = 60000;       // yon hareketten hesaplandigi icin sik yenilemek gerekiyor
+  var REFRESH_MS = 30000;       // yon iki olcum arasindan cikiyor; ilk ok cabuk gorunsun
   var STALE_MS = 30 * 60000;    // 30 dk once veri gonderen arac "eski" sayilir
 
   function vehicleServiceUrl() {
@@ -707,11 +707,15 @@
   /* Saglayici yon gondermiyor (ya da hep 0 gonderiyor). Bu yuzden yonu
      ONCE aracin gercekten gittigi yoldan hesapliyoruz; saglayici degeri
      yalnizca elimizde hareket verisi yoksa kullaniliyor. */
+  /* Yon YALNIZCA aracin gittigi yoldan hesaplanir.
+     Saglayicinin speedDirection alani kullanilmiyor: sifir geliyor ya da
+     derece yerine kucuk sektor kodu gibi davraniyor; iki denemede de tum
+     oklari kuzeye cevirdi. Bilinmiyorsa ok yerine yonsuz simge gosterilir. */
   function heading(v) {
     var id = v.plate || String(v.muId);
     var rec = vehicleMarkers[id];
 
-    // 1) onceki konumdan gidis yonu — en guvenilir kaynak
+    // 1) onceki konumdan gidis yonu
     if (rec && rec.prev) {
       var b = bearing(rec.prev.lat, rec.prev.lon, v.latitude, v.longitude);
       if (b !== null) {
@@ -722,26 +726,12 @@
       }
     }
 
-    // 2) hareketten hesaplanmis onceki yon (arac durmus olabilir)
+    // 2) bu oturumda hareketten hesaplanmis son yon (arac durmus olabilir)
     if (rec && rec.headingFromMovement && Number.isFinite(rec.lastHeading)) {
       return rec.lastHeading;
     }
 
-    // 3) saglayici degeri (0 da gecerli sayilir ama hareket verisi onceliklidir)
-    if (v.speedDirection !== undefined && v.speedDirection !== null && v.speedDirection !== "") {
-      var d = Number(v.speedDirection);
-      if (Number.isFinite(d) && d !== 0) {
-        d = ((d % 360) + 360) % 360;
-        if (rec) rec.lastHeading = d;
-        return d;
-      }
-    }
-
-    // 4) bu oturumda bilinen son yon
-    if (rec && Number.isFinite(rec.lastHeading)) return rec.lastHeading;
-
-    // 5) onceki ziyaretten hatirlanan yon
-    // 5) onceki ziyaretten hatirlanan yon (0 = bilinmiyor sayilir)
+    // 3) onceki ziyaretten hatirlanan yon (0 = bilinmiyor sayilir)
     if (Number.isFinite(headStore[id]) && headStore[id] !== 0) {
       if (rec) {
         rec.lastHeading = headStore[id];
@@ -1012,6 +1002,11 @@
   function startVehiclePolling() {
     stopVehiclePolling();
     loadVehicles();
+    // Ilk acilista yon icin ikinci bir olcum gerekiyor; tam periyodu
+    // beklemeden erken bir sorgu at (servis onbellegi bitmis olur).
+    setTimeout(function () {
+      if (active.vehicle && !document.hidden) loadVehicles(true);
+    }, 12000);
     vehicleTimer = setInterval(function () {
       if (document.hidden) return;   // sekme arka plandayken sorgu atma
       loadVehicles();

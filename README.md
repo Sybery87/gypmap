@@ -112,6 +112,25 @@ tazelenmiyordu, ilk boyutta kaliyorlardi (`refreshIconSizes` icine eklendi).
 Simgelerin viewBox icindeki merkezleri olculup duzeltildi (atbasi, atolye ve
 uretim kuyusu kayikti). Yedisi de artik cizim sinirlarina gore tam ortali.
 
+### Yon nasil bulunuyor
+
+Saglayicinin `speedDirection` alani KULLANILMIYOR. Sifir geliyor ya da derece
+yerine kucuk sektor kodu gibi davraniyor (1, 4, 8, 12 gibi); bu degerler
+dogrudan aciya cevrilince tum oklar kuzeye yakin cikiyordu.
+
+Yon **yalnizca aracin iki olcum arasinda gittigi yoldan** hesaplaniyor. Bunun
+icin iki farkli konum gerekiyor, bu yuzden zamanlamalar kisa tutuldu:
+
+- istemci 30 sn'de bir sorguluyor (`REFRESH_MS`)
+- acilistan 12 sn sonra ek bir sorgu daha atiliyor
+- servis onbellegi `/last` icin 10 sn (`policy.js`, `ttl`)
+
+Sonuc: ok yaklasik 15 sn icinde cikiyor. Hesaplanan yon tarayiciya yazildigi
+icin sonraki ziyaretlerde aninda geliyor.
+
+Yon bilinmiyorsa ok yerine yonsuz daire gosterilir; kuzeye bakan yaniltici ok
+cizilmiyor.
+
 ### Yon deposu
 
 Eski surumler saglayicidan gelen `speedDirection: 0` degerini "tam kuzey" sanip
