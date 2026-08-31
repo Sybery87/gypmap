@@ -147,14 +147,21 @@ Satira tiklayinca harita o kayda ucar ve balonu acar.
 
 ### Stok modu
 
-Katman seridinin sagindaki "Stoklar" dugmesi haritayi gri tona cevirir
-(`filter: grayscale`), zemini koyu laciverte alir ve mevcut isaretcileri
-soluklastirip tiklanamaz yapar. Dugme adi "Harita" olur; tekrar basinca
+Katman seridinin sagindaki "Stoklar" dugmesi haritayi yumusak altin tona
+cevirir, zemini koyu laciverte alir ve mevcut isaretcileri soluklastirip
+tiklanamaz yapar. Ton: `grayscale(1) sepia(.58) saturate(1.18)
+hue-rotate(8deg) brightness(.97)` - once griye indirilip sicak tona
+cevriliyor, doygunluk bilerek dusuk (uzun bakista goz yormasin). Dugme adi "Harita" olur; tekrar basinca
 her sey eski haline doner. Amac: ileride eklenecek stok gosteriminin
 kule/kuyu/arac bilgileriyle karismamasi.
 
 Harita islevi degismiyor - yalnizca renk ve etkilesim. Gece/gunduz secimi
 korunuyor.
+
+Gecis 0.55 sn yumusak: filtre HER ZAMAN ayni fonksiyon listesiyle tanimli
+(normalde tarafsiz degerlerde), yoksa `none` -> `filter(...)` arasinda ara
+deger uretilemiyor ve renk aniden sicriyordu. Maske/sinir rengi SVG `fill`
+gecisiyle, isaretciler ve ust katman ogeleri opaklik gecisiyle yumusatildi.
 
 ### Renk kodu
 

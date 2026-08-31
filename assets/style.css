@@ -22,8 +22,10 @@
   --c-vehicle: #0971CE;     /* arac */
   --stok-bg: #eceff4;       /* Stoklar butonu: gri zemin */
   --stok-fg: #4a5568;
+  --stok-aktif: #c8912f;    /* stok modu aktifken: altin */
+  --stok-aktif-fg: #2a1e05;
 }
-:root.stok-modu { --mask: #0d1a33; }        /* stok modunda zemin koyu lacivert */
+:root.stok-modu { --mask: #0d1a33; --border-stroke: rgba(223,174,79,.75); }
 
 [data-theme="dark"] {
   --bg: #050d1e;
@@ -47,8 +49,10 @@
   --c-vehicle: #2E93E8;
   --stok-bg: #1b2942;
   --stok-fg: #9fb0cc;
+  --stok-aktif: #dfae4f;
+  --stok-aktif-fg: #2a1e05;
 }
-[data-theme="dark"].stok-modu { --mask: #0d1a33; }
+[data-theme="dark"].stok-modu { --mask: #0d1a33; --border-stroke: rgba(223,174,79,.75); }
 
 * { box-sizing: border-box; }
 
@@ -796,6 +800,9 @@ h1.title {
 
 @media (prefers-reduced-motion: reduce) {
   .load-bar::after, .filter.all.hint, .leaflet-popup { animation: none; }
+  .leaflet-tile-pane, .leaflet-overlay-pane path,
+  .gyp-marker, .ghost-marker, .gyp-label,
+  .veh-summary, .veh-panel-btn, .zoom-hint, .legend { transition: none; }
 }
 
 /* ---------- aydinlik tema: uydu goruntusu uzerinde okunurluk ---------- */
@@ -868,21 +875,43 @@ html[data-theme="light"] .gyp-marker .chip {
 .stok-btn svg { transition: transform .45s cubic-bezier(.3,.9,.3,1); }
 .stok-btn:hover svg { transform: rotate(180deg); }
 .stok-btn.on {
-  background: var(--ink); color: #fff; border-color: var(--ink);
+  background: var(--stok-aktif); color: var(--stok-aktif-fg);
+  border-color: var(--stok-aktif);
 }
 .stok-btn.on svg { transform: rotate(-180deg); }
-[data-theme="dark"] .stok-btn.on { background: var(--accent); color: #04142c; border-color: var(--accent); }
 
 /* ---------- stok modu: harita gri, isaretciler pasif ---------- */
-.stok-modu .leaflet-tile-pane { filter: grayscale(1) contrast(.92) brightness(.96); }
+/* Gecisin ara deger uretebilmesi icin filtre HER ZAMAN ayni fonksiyon
+   listesiyle tanimli; normalde tarafsiz degerlerde duruyor. */
+.leaflet-tile-pane {
+  filter: grayscale(0) sepia(0) saturate(1) hue-rotate(0deg) brightness(1);
+  transition: filter .55s cubic-bezier(.4, 0, .2, 1);
+}
+.stok-modu .leaflet-tile-pane {
+  /* yumusak altin: once gri, sonra sicak tona cevrilir.
+     Doygunluk bilerek dusuk tutuldu, uzun bakista goz yormasin. */
+  filter: grayscale(1) sepia(.58) saturate(1.18) hue-rotate(8deg) brightness(.97);
+}
+
+/* maske ve sinir cizgisi rengi de yumusak gecsin */
+.leaflet-overlay-pane path { transition: fill .55s ease, stroke .55s ease; }
+
+.gyp-marker, .ghost-marker, .gyp-label {
+  transition: opacity .45s ease;
+}
 .stok-modu .gyp-marker,
 .stok-modu .ghost-marker { pointer-events: none; opacity: .38; }
 .stok-modu .gyp-label { opacity: .3; }
 .stok-modu .leaflet-popup { display: none; }
+.veh-summary, .veh-panel-btn, .zoom-hint, .legend {
+  transition: opacity .3s ease, transform .3s ease;
+}
 .stok-modu .veh-summary,
 .stok-modu .veh-panel-btn,
 .stok-modu .zoom-hint,
-.stok-modu .legend { display: none !important; }
+.stok-modu .legend {
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+}
 
 /* ---------- listede tur basliklari ---------- */
 .liste-baslik {
