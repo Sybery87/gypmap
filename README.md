@@ -138,6 +138,24 @@ kaydediyordu; bu kayitlar yuzunden yenilemeden sonra tum oklar kuzeye donuyordu.
 Anahtar `gyp-heading-v2` olarak degistirildi, eskisi siliniyor, 0 artik
 "bilinmiyor" sayiliyor ve gercek kuzey **360** olarak saklaniyor.
 
+### Liste paneli
+
+Liste yalnizca ACIK katmanlari gosterir: kule secili ise sadece kuleler,
+kule + ofis secili ise ikisi birden. Kategori basliklariyla gruplanir, her
+grup filtre seridindeki sirayi ve rengi izler. Arama ad ve alt bilgide gecer.
+Satira tiklayinca harita o kayda ucar ve balonu acar.
+
+### Stok modu
+
+Katman seridinin sagindaki "Stoklar" dugmesi haritayi gri tona cevirir
+(`filter: grayscale`), zemini koyu laciverte alir ve mevcut isaretcileri
+soluklastirip tiklanamaz yapar. Dugme adi "Harita" olur; tekrar basinca
+her sey eski haline doner. Amac: ileride eklenecek stok gosteriminin
+kule/kuyu/arac bilgileriyle karismamasi.
+
+Harita islevi degismiyor - yalnizca renk ve etkilesim. Gece/gunduz secimi
+korunuyor.
+
 ### Renk kodu
 
 Her tür kendi rengini taşır (`--c-rig`, `--c-production`, `--c-workshop`,
@@ -145,15 +163,6 @@ Her tür kendi rengini taşır (`--c-rig`, `--c-production`, `--c-workshop`,
 `--cat` değişkeni üzerinden ikona, seçili dolgusuna ve dalgaya aktarılır.
 Filtre rozetleri de aynı renkleri kullanır, bağ kurulsun diye.
 
-### Üst üste binen işaretçiler
-
-Yakın sahalar (Zeynel, Dirsekli grupları) tek yumak oluyordu. Bir tanesine
-tıklayınca grup daire şeklinde açılır, her biri merkeze ince çizgiyle bağlanır.
-Zoom / sürükleme / boşluğa tıklama kapatır.
-
-İki tuzak vardı: işaretçileri taşımak haritayı kaydırıp açılışı hemen geri
-kapatıyordu (`spiderMesgul` bayrağı ve `movestart` yerine `dragstart`), ve açık
-bir balon autoPan tetikliyordu (açmadan önce `map.closePopup()`).
 
 ### Harita kaydırma sınırı
 

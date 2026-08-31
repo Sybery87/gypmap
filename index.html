@@ -50,7 +50,17 @@
       <span class="ft-label">Katmanlar</span>
       <span class="ft-active" id="ft-active"></span>
     </button>
-    <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
+    <div class="filters-satir">
+      <nav class="filters" id="filters" aria-label="Tür filtresi"></nav>
+      <button type="button" id="stok-btn" class="stok-btn" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+          <path d="M20 11.5A8 8 0 105.6 17.4M20 6v5.5h-5.5"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="stok-btn-yazi">Stoklar</span>
+      </button>
+    </div>
   </div>
 
   <div class="load-bar" id="load-bar" aria-hidden="true"></div>
@@ -60,20 +70,20 @@
     <div id="veh-summary" class="veh-summary" style="display:none"></div>
 
     <button type="button" id="veh-panel-btn" class="veh-panel-btn" style="display:none"
-            aria-label="Araç listesi">
+            aria-label="Liste">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
         <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <span>Araç Listesi</span>
+      <span>Liste</span>
     </button>
 
-    <aside id="veh-panel" class="veh-panel" aria-label="Araç listesi">
+    <aside id="veh-panel" class="veh-panel" aria-label="Liste">
       <div class="veh-panel-head">
-        <strong>Araçlar</strong>
+        <strong id="liste-baslik">Liste</strong>
         <button type="button" id="veh-panel-close" aria-label="Kapat">&times;</button>
       </div>
-      <input id="veh-search" class="veh-search" type="search" placeholder="Plaka ara…"
+      <input id="veh-search" class="veh-search" type="search" placeholder="Ara…"
              autocomplete="off">
       <div id="veh-list" class="veh-list"></div>
     </aside>

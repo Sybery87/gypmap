@@ -259,13 +259,6 @@
       var el = mk.getElement();
       if (el) el.title = label;
     });
-    // ust uste binmisse once grubu ac, balonu acma
-    mk.on("click", function (e) {
-      if (rec && !spiderAcik.length && spiderAc(rec)) {
-        L.DomEvent.stop(e);
-        mk.closePopup();
-      }
-    });
     mk.on("popupopen", function () {
       var el = mk.getElement();
       if (el) el.classList.add("is-active");
@@ -276,7 +269,6 @@
     });
     mk.on("dblclick", function (e) {
       L.DomEvent.stop(e);
-      spiderKapat();
       map.flyTo(latlng, Math.min(map.getMaxZoom(), Math.max(map.getZoom(), 15)), { duration: 0.8 });
     });
   }
@@ -393,6 +385,7 @@
       var recF = {
         marker: mk, label: f.name, kind: "fx", kindIcon: f.type,
         cat: f.type, weight: 100, latlng: ll,
+        altBilgi: f.city || "",
       };
       wireMarker(mk, ll, f.name, recF);
       markers.push(recF);
@@ -407,6 +400,7 @@
       var recP = {
         marker: mk, label: s.name, kind: "rig", kindIcon: "production",
         cat: "production", weight: 20, latlng: ll,
+        altBilgi: s.city || "",
       };
       wireMarker(mk, ll, s.name, recP);
       markers.push(recP);
@@ -422,6 +416,7 @@
         marker: mk, label: r.name, kind: "rig", kindIcon: "rig", cat: "rig", seed: i,
         weight: r.employees && r.employees.length ? 50 : 10,
         latlng: ll,
+        altBilgi: [r.city, r.note].filter(Boolean).join(" · "),
       };
       wireMarker(mk, ll, r.name, recR);
       markers.push(recR);
@@ -1246,60 +1241,114 @@
   /* ---------- arac listesi paneli ---------- */
   var lastVehicles = [];
 
+  /* Liste yalnizca ACIK katmanlari gosterir. Kule secili ise sadece kuleler,
+     kule + ofis secili ise ikisi birden listelenir. */
+  var KATEGORI_ADI = {
+    rig: "Kuleler", office: "Ofisler", workshop: "Kamplar",
+    production: "Üretim Kuyuları", vehicle: "Araçlar",
+  };
+
+  function listeKayitlari() {
+    var out = [];
+    markers.forEach(function (m) {
+      if (!active[m.cat]) return;
+      out.push({
+        id: m.label, cat: m.cat, ad: m.label,
+        alt: m.altBilgi || "", sag: "", nokta: "",
+      });
+    });
+    if (active.vehicle) {
+      lastVehicles.forEach(function (v) {
+        if (!statusMatches(v)) return;
+        var sl = siteLabel(v.latitude, v.longitude);
+        out.push({
+          id: v.plate || String(v.muId), cat: "vehicle",
+          ad: v.plate || "—",
+          alt: sl ? sl.text : "Konum yok",
+          sag: isMoving(v) ? Math.round(v.speed) + " km/sa" : "—",
+          nokta: vehicleStatus(v),
+        });
+      });
+    }
+    return out;
+  }
+
   function renderVehicleList() {
     var host = document.getElementById("veh-list");
     if (!host) return;
     var q = (document.getElementById("veh-search").value || "").trim().toLocaleLowerCase("tr");
-    var rows = lastVehicles
-      .filter(function (v) {
-        if (!statusMatches(v)) return false;
-        if (!q) return true;
-        return (
-          (v.plate || "").toLocaleLowerCase("tr").indexOf(q) !== -1 ||
-          (v.vehicleLabel || "").toLocaleLowerCase("tr").indexOf(q) !== -1
-        );
-      })
-      .sort(function (a, b) {
-        var am = isMoving(a) ? 0 : 1, bm = isMoving(b) ? 0 : 1;
-        if (am !== bm) return am - bm;
-        return (a.plate || "").localeCompare(b.plate || "", "tr");
-      });
+
+    var rows = listeKayitlari().filter(function (r) {
+      if (!q) return true;
+      return (
+        r.ad.toLocaleLowerCase("tr").indexOf(q) !== -1 ||
+        (r.alt || "").toLocaleLowerCase("tr").indexOf(q) !== -1
+      );
+    });
 
     if (!rows.length) {
       host.innerHTML =
         '<p class="veh-empty">' +
-        (statusFilter ? "Bu durumda araç yok" : "Kayıt yok") + "</p>";
+        (q ? "Eşleşen kayıt yok"
+           : statusFilter ? "Bu durumda araç yok"
+           : "Görüntülemek için yukarıdan katman seçin") + "</p>";
       return;
     }
 
-    host.innerHTML = rows
-      .map(function (v) {
-        var sl = siteLabel(v.latitude, v.longitude);
-        var durum = vehicleStatus(v);
+    // kategoriye gore grupla, filtre seridindeki sirayi izle
+    var sira = CATEGORIES.map(function (c) { return c.key; });
+    var gruplar = {};
+    rows.forEach(function (r) { (gruplar[r.cat] = gruplar[r.cat] || []).push(r); });
+
+    var html = "";
+    sira.forEach(function (k) {
+      var g = gruplar[k];
+      if (!g || !g.length) return;
+      g.sort(function (a, b) {
+        if (k === "vehicle") {
+          var am = a.nokta === "hareket" ? 0 : 1, bm = b.nokta === "hareket" ? 0 : 1;
+          if (am !== bm) return am - bm;
+        }
+        return a.ad.localeCompare(b.ad, "tr", { numeric: true });
+      });
+      html +=
+        '<p class="liste-baslik cat-' + k + '"><span class="liste-nokta"></span>' +
+        G.escapeHtml(KATEGORI_ADI[k] || k) + '<em>' + g.length + "</em></p>";
+      html += g.map(function (r) {
         return (
-          '<button type="button" class="veh-row" data-plate="' + G.escapeHtml(v.plate || "") + '">' +
-          '<span class="veh-dot ' + durum + '"></span>' +
-          '<span class="veh-main"><b>' + G.escapeHtml(v.plate || "—") + "</b>" +
-          '<em>' + G.escapeHtml(sl ? sl.text : "Konum yok") + "</em></span>" +
-          '<span class="veh-speed">' + (isMoving(v) ? Math.round(v.speed) + " km/sa" : "—") + "</span>" +
+          '<button type="button" class="veh-row" data-id="' + G.escapeHtml(r.id) +
+          '" data-cat="' + r.cat + '">' +
+          (r.cat === "vehicle"
+            ? '<span class="veh-dot ' + r.nokta + '"></span>'
+            : '<span class="veh-dot cat-' + r.cat + ' tur"></span>') +
+          '<span class="veh-main"><b>' + G.escapeHtml(r.ad) + "</b>" +
+          (r.alt ? "<em>" + G.escapeHtml(r.alt) + "</em>" : "") + "</span>" +
+          '<span class="veh-speed">' + G.escapeHtml(r.sag) + "</span>" +
           "</button>"
         );
-      })
-      .join("");
+      }).join("");
+    });
+    host.innerHTML = html;
   }
 
-  function focusVehicle(plate) {
-    var rec = vehicleMarkers[plate];
-    if (!rec) return;
-    // durum filtresi yuzunden gizliyse once gorunur yap
-    if (!vehicleLayer.hasLayer(rec.marker)) {
-      statusFilter = null;
-      applyStatusFilter();
-      updateSummary(lastVehicles);
-      renderVehicleList();
+  function focusKayit(id, cat) {
+    if (cat === "vehicle") {
+      var rec = vehicleMarkers[id];
+      if (!rec) return;
+      if (vehicleLayer && !vehicleLayer.hasLayer(rec.marker)) {
+        statusFilter = null;
+        applyStatusFilter();
+        updateSummary(lastVehicles);
+        renderVehicleList();
+      }
+      map.flyTo(rec.marker.getLatLng(), Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
+      setTimeout(function () { rec.marker.openPopup(); }, 850);
+      return;
     }
-    map.flyTo(rec.marker.getLatLng(), Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
-    setTimeout(function () { rec.marker.openPopup(); }, 850);
+    var m = markers.filter(function (x) { return x.label === id && x.cat === cat; })[0];
+    if (!m) return;
+    map.flyTo(m.latlng, Math.min(map.getMaxZoom(), 14), { duration: 0.8 });
+    setTimeout(function () { m.marker.openPopup(); }, 850);
   }
 
   function toggleVehiclePanel(force) {
@@ -1330,7 +1379,7 @@
     if (list) {
       list.addEventListener("click", function (e) {
         var b = e.target.closest(".veh-row");
-        if (b) focusVehicle(b.dataset.plate);
+        if (b) focusKayit(b.dataset.id, b.dataset.cat);
       });
     }
 
@@ -1474,7 +1523,6 @@
   }
 
   function applyFilters() {
-    spiderKapat();
     markers.forEach(function (m) {
       var want = !!active[m.cat];
       var on = markerLayer.hasLayer(m.marker);
@@ -1489,8 +1537,11 @@
     });
 
     // araclar acikken sorgula, kapaninca durdur
+    var acikVar = CATEGORIES.some(function (c) { return active[c.key]; });
     var pb = document.getElementById("veh-panel-btn");
-    if (pb) pb.style.display = active.vehicle ? "flex" : "none";
+    if (pb) pb.style.display = acikVar ? "flex" : "none";
+
+    if (document.getElementById("veh-panel").classList.contains("open")) renderVehicleList();
 
     if (active.vehicle) {
       if (!vehicleLayer) vehicleLayer = L.layerGroup();
@@ -1501,7 +1552,6 @@
       setVehicleStatus("");
       if (vehicleLayer && map.hasLayer(vehicleLayer)) map.removeLayer(vehicleLayer);
       clearTrack();
-      toggleVehiclePanel(false);
       lastVehicles = [];
       statusFilter = null;
       updateSummary([]);
@@ -1510,62 +1560,40 @@
     declutter();
   }
 
-  /* ---------- ust uste binen isaretcileri acma ----------
-     Yakin sahalarda ikonlar tek yumak oluyor. Bir tanesine tiklandiginda
-     grup daire seklinde acilir, her biri merkeze ince bir cizgiyle baglanir.
-     Zoom/kaydirma veya bosluga tiklama kapatir. */
-  var SPIDER_PX = 30;          // bu piksel mesafeden yakinsa ayni gruptur
-  var spiderLayer = null;
-  var spiderAcik = [];         // { m, orijinal }
-  var spiderMesgul = false;    // acilirken tetiklenen harita olaylari kapatmasin
+  /* ---------- stok modu ----------
+     Harita griye doner, mevcut isaretciler durur ama tiklanamaz.
+     Amac: ileride eklenecek stok gosterimi digerleriyle karismasin. */
+  var stokModu = false;
 
-  function spiderKapat() {
-    if (spiderMesgul) return;
-    if (!spiderAcik.length) return;
-    spiderAcik.forEach(function (it) { it.m.marker.setLatLng(it.orijinal); });
-    spiderAcik = [];
-    if (spiderLayer) { map.removeLayer(spiderLayer); spiderLayer = null; }
+  function stokDegistir() {
+    stokModu = !stokModu;
+    var kok = document.documentElement;
+    kok.classList.toggle("stok-modu", stokModu);
+
+    var btn = document.getElementById("stok-btn");
+    var yazi = document.getElementById("stok-btn-yazi");
+    if (yazi) yazi.textContent = stokModu ? "Harita" : "Stoklar";
+    if (btn) {
+      btn.classList.toggle("on", stokModu);
+      btn.setAttribute("aria-pressed", stokModu ? "true" : "false");
+    }
+
+    if (stokModu) {
+      map.closePopup();
+      clearTrack();
+      toggleVehiclePanel(false);
+      setVehicleStatus("");
+    }
+
+    // maske rengi tema degiskeninden geliyor; katmani tazele
+    if (maskLayer) maskLayer.setStyle({ fillColor: cssVar("--mask") });
+    if (borderLayer) borderLayer.setStyle({ color: cssVar("--border-stroke") });
     declutter();
   }
 
-  function spiderGrubu(hedef) {
-    var p0 = map.latLngToContainerPoint(hedef.latlng);
-    return markers.filter(function (m) {
-      if (!markerLayer.hasLayer(m.marker)) return false;
-      var p = map.latLngToContainerPoint(m.latlng);
-      return Math.hypot(p.x - p0.x, p.y - p0.y) <= SPIDER_PX;
-    });
-  }
-
-  function spiderAc(hedef) {
-    var grup = spiderGrubu(hedef);
-    if (grup.length < 2) return false;
-
-    spiderKapat();
-    map.closePopup();          // acik balon autoPan tetikleyip grubu kapatiyordu
-    spiderMesgul = true;
-    spiderLayer = L.layerGroup().addTo(map);
-
-    // grubun ortasi
-    var pts = grup.map(function (m) { return map.latLngToContainerPoint(m.latlng); });
-    var cx = pts.reduce(function (a, p) { return a + p.x; }, 0) / pts.length;
-    var cy = pts.reduce(function (a, p) { return a + p.y; }, 0) / pts.length;
-    var merkez = L.point(cx, cy);
-    var r = Math.max(38, 13 * grup.length);
-
-    grup.forEach(function (m, i) {
-      var aci = (2 * Math.PI * i) / grup.length - Math.PI / 2;
-      var hedefP = L.point(cx + r * Math.cos(aci), cy + r * Math.sin(aci));
-      var yeni = map.containerPointToLatLng(hedefP);
-      spiderAcik.push({ m: m, orijinal: m.latlng });
-      L.polyline([map.containerPointToLatLng(merkez), yeni], {
-        color: "rgba(255,255,255,.55)", weight: 1.2, interactive: false,
-      }).addTo(spiderLayer);
-      m.marker.setLatLng(yeni);
-    });
-    spiderMesgul = false;
-    declutter();
-    return true;
+  function wireStok() {
+    var btn = document.getElementById("stok-btn");
+    if (btn) btn.addEventListener("click", stokDegistir);
   }
 
   /* ---------- kontroller ---------- */
@@ -1639,12 +1667,11 @@
     buildFilters();
     wireVehicleUi();
     wireBar();
+    wireStok();
 
     map.on("moveend", updateZoomCap);
     updateZoomCap();
     map.on("zoomend", refreshIconSizes);
-    map.on("zoomstart dragstart", spiderKapat);
-    map.on("click", spiderKapat);
     map.on("zoomend moveend resize", declutter);
     map.on("zoomend", applyLayer);
 
