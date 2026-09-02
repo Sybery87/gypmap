@@ -386,6 +386,7 @@
         marker: mk, label: f.name, kind: "fx", kindIcon: f.type,
         cat: f.type, weight: 100, latlng: ll,
         altBilgi: f.city || "",
+        adres: f.address || "",
       };
       wireMarker(mk, ll, f.name, recF);
       markers.push(recF);
@@ -417,6 +418,7 @@
         weight: r.employees && r.employees.length ? 50 : 10,
         latlng: ll,
         altBilgi: [r.city, r.note].filter(Boolean).join(" · "),
+        adres: r.address || "",
       };
       wireMarker(mk, ll, r.name, recR);
       markers.push(recR);
@@ -1471,7 +1473,8 @@
   var active = { rig: false, office: false, workshop: false, production: false, vehicle: false };
 
   function allOn() {
-    return CATEGORIES.every(function (c) { return active[c.key]; });
+    var izinli = CATEGORIES.filter(function (c) { return yetkiliMi(c.key); });
+    return izinli.length > 0 && izinli.every(function (c) { return active[c.key]; });
   }
 
   function buildFilters() {
@@ -1487,6 +1490,10 @@
         '<span class="filter-icon">' + G.GLYPHS[c.glyph] + "</span>" +
         "<span>" + c.label + "</span>" +
         '<span class="filter-count" id="cnt-' + c.key + '">0</span>' +
+        '<span class="kilit" title="Erişmek için yetkili girişi yapınız." aria-label="Erişmek için yetkili girişi yapınız.">' +
+        '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">' +
+        '<rect x="5" y="10.5" width="14" height="10" rx="2.2"/>' +
+        '<path d="M8.4 10.5V7.6a3.6 3.6 0 017.2 0v2.9" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>' +
         "</button>"
       );
     }).join("");
@@ -1496,9 +1503,10 @@
       var b = e.target.closest(".filter");
       if (!b) return;
       var k = b.dataset.key;
+      if (k !== "all" && !yetkiliMi(k)) { modalAc(true); return; }
       if (k === "all") {
         var turnOff = allOn();
-        CATEGORIES.forEach(function (c) { active[c.key] = !turnOff; });
+        CATEGORIES.forEach(function (c) { active[c.key] = yetkiliMi(c.key) ? !turnOff : false; });
       } else {
         active[k] = !active[k];
       }
@@ -1513,6 +1521,11 @@
       var on = k === "all" ? allOn() : !!active[k];
       b.classList.toggle("on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
+      if (k !== "all") {
+        var izin = yetkiliMi(k);
+        b.classList.toggle("kilitli", !izin);
+        b.title = izin ? "" : "Erişmek için yetkili girişi yapınız.";
+      }
     });
     // hicbiri secili degilse "Tumu" dikkat cekmeye devam etsin
     var tumu = document.querySelector('.filter[data-key="all"]');
@@ -1564,6 +1577,29 @@
      Harita griye doner, mevcut isaretciler durur ama tiklanamaz.
      Amac: ileride eklenecek stok gosterimi digerleriyle karismasin. */
   var stokModu = false;
+  var stokOncesi = null;
+  // stok gorunumunde yer alan turler: uretim kuyulari ve araclar disarida
+  var STOK_TURLERI = ["rig", "office", "workshop"];
+
+  function stokPopupHtml(m) {
+    var h =
+      '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(m.label) + "</p>" +
+      '<div class="pop-city">' + G.escapeHtml(m.altBilgi || "") + "</div></div>";
+    if (m.adres) {
+      h += '<div class="pop-body"><p class="sec-label">Adres</p>' +
+           '<p class="pop-address">' + G.escapeHtml(m.adres) + "</p></div>";
+    }
+    h += '<div class="pop-body stok-bolum"><p class="sec-label">Stoktakiler</p>' +
+         '<p class="empty-note">Henüz kayıt girilmedi.</p></div>';
+    return h;
+  }
+
+  function tazeleStokBalonlari() {
+    markers.forEach(function (m) {
+      if (!m.normalPopup) m.normalPopup = m.marker.getPopup().getContent();
+      m.marker.setPopupContent(stokModu ? stokPopupHtml(m) : m.normalPopup);
+    });
+  }
 
   function stokDegistir() {
     stokModu = !stokModu;
@@ -1583,7 +1619,21 @@
       clearTrack();
       toggleVehiclePanel(false);
       setVehicleStatus("");
+      // stok gorunumunde acilacak katmanlari hatirla
+      stokOncesi = {};
+      CATEGORIES.forEach(function (c) { stokOncesi[c.key] = active[c.key]; });
+      CATEGORIES.forEach(function (c) {
+        active[c.key] = STOK_TURLERI.indexOf(c.key) !== -1 && yetkiliMi(c.key);
+      });
+    } else if (stokOncesi) {
+      CATEGORIES.forEach(function (c) { active[c.key] = !!stokOncesi[c.key]; });
+      stokOncesi = null;
     }
+
+    // balon icerigi moda gore degisiyor
+    tazeleStokBalonlari();
+    syncFilters();
+    applyFilters();
 
     // maske rengi tema degiskeninden geliyor; katmani tazele
     if (maskLayer) maskLayer.setStyle({ fillColor: cssVar("--mask") });
@@ -1594,6 +1644,203 @@
   function wireStok() {
     var btn = document.getElementById("stok-btn");
     if (btn) btn.addEventListener("click", stokDegistir);
+  }
+
+  /* ---------- yetkili girisi ---------- */
+  var A = window.GYPAuth;
+
+  function yetkiliMi(tur) {
+    return A ? A.yetkili(tur) : true;
+  }
+
+  function modalAc(goster) {
+    var fon = document.getElementById("giris-fon");
+    if (!fon) return;
+    fon.hidden = !goster;
+    if (goster) {
+      yonetimTazele();
+      var g = document.getElementById("giris-ekrani");
+      var y = document.getElementById("yonetim-ekrani");
+      var yon = A && A.yoneticiMi();
+      g.hidden = !!yon;
+      y.hidden = !yon;
+      document.getElementById("modal-baslik").textContent =
+        yon ? "Yetkili Yönetimi" : "Yetkili Girişi";
+      if (!yon) setTimeout(function () {
+        var e = document.getElementById("giris-eposta");
+        if (e) e.focus();
+      }, 60);
+    }
+  }
+
+  function hata(id, mesaj) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = mesaj || "";
+    el.hidden = !mesaj;
+  }
+
+  function yetkiKutulariniKur() {
+    var host = document.getElementById("yetki-kutulari");
+    if (!host) return;
+    host.innerHTML = CATEGORIES.map(function (c) {
+      return (
+        '<label class="tik-satir"><input type="checkbox" data-yetki="' + c.key + '"> ' +
+        G.escapeHtml(c.label) + "</label>"
+      );
+    }).join("");
+  }
+
+  function yonetimTazele() {
+    if (!A) return;
+    var kim = document.getElementById("yonetim-kim");
+    var akt = A.aktif();
+    if (kim && akt) kim.textContent = akt.eposta + " olarak giriş yapıldı.";
+
+    var host = document.getElementById("kullanici-liste");
+    if (!host) return;
+    var liste = A.liste();
+    host.innerHTML = liste.map(function (k) {
+      var yetkiler = CATEGORIES.filter(function (c) { return k.yetki[c.key]; })
+        .map(function (c) { return c.label; });
+      return (
+        '<div class="kullanici-satir">' +
+        '<div><b>' + G.escapeHtml(k.eposta) + "</b>" +
+        (k.yonetici ? '<span class="rozet">yönetici</span>' : "") +
+        "<em>" + G.escapeHtml(yetkiler.length ? yetkiler.join(", ") : "yetki yok") + "</em></div>" +
+        '<button type="button" class="sil-btn" data-sil="' + G.escapeHtml(k.eposta) + '">Sil</button>' +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function yetkiUygula() {
+    var girisli = A ? A.girisliMi() : true;
+
+    // baslik: sayilar yalnizca girisli kullaniciya
+    var st = document.getElementById("stats");
+    if (st) st.classList.toggle("kilitli", !girisli);
+
+    // yetkisiz katmanlar kapatilir
+    CATEGORIES.forEach(function (c) {
+      if (!yetkiliMi(c.key) && active[c.key]) active[c.key] = false;
+    });
+
+    // stok modu giris ister
+    var sb = document.getElementById("stok-btn");
+    if (sb) {
+      sb.classList.toggle("kilitli", !girisli);
+      sb.disabled = !girisli;
+      sb.title = girisli ? "" : "Erişmek için yetkili girişi yapınız.";
+    }
+    if (!girisli && stokModu) stokDegistir();
+
+    var btn = document.getElementById("yetki-btn");
+    var yazi = document.getElementById("yetki-btn-yazi");
+    if (btn && yazi) {
+      btn.classList.toggle("on", girisli);
+      yazi.textContent = girisli
+        ? (A.yoneticiMi() ? "Yönetim" : "Çıkış")
+        : "Yetkili Girişi";
+    }
+
+    syncFilters();
+    applyFilters();
+  }
+
+  function wireGiris() {
+    if (!A) return;
+    yetkiKutulariniKur();
+
+    var btn = document.getElementById("yetki-btn");
+    if (btn) btn.addEventListener("click", function () {
+      if (A.girisliMi() && !A.yoneticiMi()) { A.cikisYap(); return; }
+      modalAc(true);
+    });
+
+    var kapat = document.getElementById("giris-kapat");
+    if (kapat) kapat.addEventListener("click", function () { modalAc(false); });
+
+    var fon = document.getElementById("giris-fon");
+    if (fon) fon.addEventListener("click", function (e) {
+      if (e.target === fon) modalAc(false);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") modalAc(false);
+    });
+
+    var gir = document.getElementById("giris-yap");
+    function dene() {
+      var e = document.getElementById("giris-eposta").value;
+      var s = document.getElementById("giris-sifre").value;
+      A.girisYap(e, s).then(function (r) {
+        if (!r.ok) { hata("giris-hata", r.mesaj); return; }
+        hata("giris-hata", "");
+        document.getElementById("giris-sifre").value = "";
+        if (A.yoneticiMi()) modalAc(true);
+        else modalAc(false);
+      });
+    }
+    if (gir) gir.addEventListener("click", dene);
+    ["giris-eposta", "giris-sifre"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") dene();
+      });
+    });
+
+    var kaydet = document.getElementById("kullanici-kaydet");
+    if (kaydet) kaydet.addEventListener("click", function () {
+      var e = document.getElementById("yeni-eposta").value;
+      var s = document.getElementById("yeni-sifre").value;
+      var yetki = {};
+      document.querySelectorAll("[data-yetki]").forEach(function (k) {
+        yetki[k.dataset.yetki] = k.checked;
+      });
+      var yon = document.getElementById("yeni-yonetici").checked;
+      A.kullaniciEkle(e, s, yetki, yon).then(function (r) {
+        if (!r.ok) { hata("yonetim-hata", r.mesaj); return; }
+        hata("yonetim-hata", "");
+        document.getElementById("yeni-eposta").value = "";
+        document.getElementById("yeni-sifre").value = "";
+        document.getElementById("yeni-yonetici").checked = false;
+        document.querySelectorAll("[data-yetki]").forEach(function (k) { k.checked = false; });
+        yonetimTazele();
+      });
+    });
+
+    var liste = document.getElementById("kullanici-liste");
+    if (liste) liste.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-sil]");
+      if (!b) return;
+      if (!confirm(b.dataset.sil + " silinsin mi?")) return;
+      var r = A.kullaniciSil(b.dataset.sil);
+      if (!r.ok) hata("yonetim-hata", r.mesaj);
+      else { hata("yonetim-hata", ""); yonetimTazele(); }
+    });
+
+    var indir = document.getElementById("liste-indir");
+    if (indir) indir.addEventListener("click", function () {
+      var blob = new Blob([A.disaAktar()], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "kullanicilar.json";
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    // yonetim ekranindan cikis
+    var kimEl = document.getElementById("yonetim-kim");
+    if (kimEl) {
+      var c = document.createElement("button");
+      c.type = "button";
+      c.className = "ikinci-btn cikis";
+      c.textContent = "Çıkış Yap";
+      c.addEventListener("click", function () { A.cikisYap(); modalAc(false); });
+      kimEl.parentNode.insertBefore(c, kimEl.nextSibling);
+    }
+
+    document.addEventListener("gyp-auth", yetkiUygula);
   }
 
   /* ---------- kontroller ---------- */
@@ -1668,6 +1915,10 @@
     wireVehicleUi();
     wireBar();
     wireStok();
+    wireGiris();
+    // yetkili listesi yuklenince arayuzu ona gore ayarla
+    if (A && A.yukle) A.yukle().then(yetkiUygula);
+    else yetkiUygula();
 
     map.on("moveend", updateZoomCap);
     updateZoomCap();

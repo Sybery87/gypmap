@@ -26,12 +26,34 @@
       </div>
     </div>
 
+    <div class="stats" id="stats">
+      <div><b id="stat-rigs">—</b>Aktif Kule</div>
+      <div><b id="stat-sites">—</b>Üretim Kuyusu</div>
+      <div><b id="stat-people">—</b>Saha Personeli</div>
+    </div>
+
     <div class="hdr-right">
-      <div class="stats">
-        <div><b id="stat-rigs">—</b>Aktif Kule</div>
-        <div><b id="stat-sites">—</b>Üretim Kuyusu</div>
-        <div><b id="stat-people">—</b>Saha Personeli</div>
-      </div>
+      <a class="ticket-link" href="https://gypticket.onrender.com"
+         target="_blank" rel="noopener" title="GYP Ticket sistemine git">
+        <span class="ticket-ikon">
+          <svg viewBox="0 0 28 20" width="22" height="16" aria-hidden="true">
+            <path class="govde" d="M2.4,2.6h23.2c.66,0,1.2.54,1.2,1.2v2.5c-1.82,0-3.3,1.48-3.3,3.3s1.48,3.3,3.3,3.3v2.5c0,.66-.54,1.2-1.2,1.2H2.4c-.66,0-1.2-.54-1.2-1.2v-2.5c1.82,0,3.3-1.48,3.3-3.3s-1.48-3.3-3.3-3.3V3.8c0-.66.54-1.2,1.2-1.2Z"/>
+            <path class="yildiz" d="M10.6,4.7l1.62,3.28,3.62.53-2.62,2.55.62,3.6-3.24-1.7-3.24,1.7.62-3.6-2.62-2.55,3.62-.53Z"/>
+            <path class="delik" d="M19.4,5.4v9.2"/>
+          </svg>
+        </span>
+        <span>GYP Ticket</span>
+      </a>
+
+      <button class="yetki-btn" id="yetki-btn" type="button">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M12 13a4 4 0 100-8 4 4 0 000 8zM4.5 20a7.5 7.5 0 0115 0"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round"/>
+        </svg>
+        <span id="yetki-btn-yazi">Yetkili Girişi</span>
+      </button>
+
       <button class="iconbtn" id="theme-btn" type="button" aria-label="Temayı değiştir" title="Gece / gündüz">
         <svg id="theme-icon" viewBox="0 0 24 24"></svg>
       </button>
@@ -64,6 +86,57 @@
   </div>
 
   <div class="load-bar" id="load-bar" aria-hidden="true"></div>
+
+  <div class="modal-fon" id="giris-fon" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-baslik">
+      <div class="modal-bas">
+        <strong id="modal-baslik">Yetkili Girişi</strong>
+        <button type="button" id="giris-kapat" aria-label="Kapat">&times;</button>
+      </div>
+
+      <div class="modal-govde" id="giris-ekrani">
+        <label class="alan">E-posta
+          <input type="email" id="giris-eposta" autocomplete="username" placeholder="ad@gypenergy.com">
+        </label>
+        <label class="alan">Şifre
+          <input type="password" id="giris-sifre" autocomplete="current-password">
+        </label>
+        <p class="modal-hata" id="giris-hata" hidden></p>
+        <button type="button" class="ana-btn" id="giris-yap">Giriş Yap</button>
+        <p class="modal-not">Giriş yapmadan yalnızca lokasyon konumları görüntülenir.</p>
+      </div>
+
+      <div class="modal-govde" id="yonetim-ekrani" hidden>
+        <p class="modal-not" id="yonetim-kim"></p>
+
+        <p class="sec-label">Yetkili Ekle / Güncelle</p>
+        <label class="alan">E-posta
+          <input type="email" id="yeni-eposta" placeholder="ad@gypenergy.com">
+        </label>
+        <label class="alan">Şifre
+          <input type="text" id="yeni-sifre" placeholder="en az 4 karakter">
+        </label>
+
+        <p class="sec-label">Erişim Yetkileri</p>
+        <div class="yetki-kutulari" id="yetki-kutulari"></div>
+        <label class="tik-satir">
+          <input type="checkbox" id="yeni-yonetici"> Yönetici (yetkili ekleyip silebilir)
+        </label>
+
+        <p class="modal-hata" id="yonetim-hata" hidden></p>
+        <button type="button" class="ana-btn" id="kullanici-kaydet">Kaydet</button>
+
+        <p class="sec-label">Kayıtlı Yetkililer</p>
+        <div class="kullanici-liste" id="kullanici-liste"></div>
+
+        <button type="button" class="ikinci-btn" id="liste-indir">kullanicilar.json indir</button>
+        <p class="modal-not">
+          Eklediğiniz yetkililer bu tarayıcıda geçerli. Herkes için geçerli olması
+          için dosyayı indirip sitedeki <code>kullanicilar.json</code> ile değiştirin.
+        </p>
+      </div>
+    </div>
+  </div>
 
   <div id="map">
     <div id="veh-status" class="veh-status" style="display:none"></div>
@@ -110,6 +183,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="assets/turkey-border.js"></script>
 <script src="assets/config.js"></script>
+<script src="assets/auth.js"></script>
 <script src="assets/shared.js"></script>
 <script src="assets/app.js"></script>
 </body>

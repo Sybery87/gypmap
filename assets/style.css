@@ -931,3 +931,153 @@ html[data-theme="light"] .gyp-marker .chip {
   border-radius: 20px; padding: 1px 7px;
 }
 .veh-dot.tur { border-radius: 3px; background: var(--cat, var(--steel)); }
+
+/* ---------- baslik: GYP Ticket baglantisi ve yetkili butonu ---------- */
+.hdr { justify-content: flex-start; }
+.hdr .stats { margin-left: auto; }
+.hdr-right { margin-left: 18px; }
+
+.ticket-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 13px 7px 9px; border-radius: 9px; text-decoration: none;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink-deep);
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.ticket-link:hover { border-color: var(--accent); transform: translateY(-1px); }
+.ticket-ikon {
+  width: 26px; height: 20px; display: flex; align-items: center; justify-content: center;
+}
+.ticket-ikon .govde { fill: var(--c-rig); }
+.ticket-ikon .yildiz { fill: #f2c14e; }
+.ticket-ikon .delik {
+  fill: none; stroke: var(--panel); stroke-width: 1.5;
+  stroke-linecap: round; stroke-dasharray: 1.4 1.7;
+}
+[data-theme="dark"] .ticket-ikon .govde { fill: #2f5bb7; }
+
+.yetki-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: 9px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--steel);
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+  transition: border-color .15s ease, color .15s ease;
+}
+.yetki-btn:hover { border-color: var(--accent); color: var(--ink-deep); }
+.yetki-btn.on { border-color: var(--accent); color: var(--accent); }
+
+/* girisi olmayan kullanicida sayilar gizli */
+.stats.kilitli b { color: var(--steel-soft); }
+.stats.kilitli { opacity: .5; }
+
+/* ---------- kilit rozetleri ---------- */
+.kilit {
+  display: none; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 20px; flex: none;
+  background: var(--bg-soft); color: var(--steel);
+}
+.kilit svg rect { fill: currentColor; }
+.filter.kilitli .filter-count { display: none; }
+.filter.kilitli .kilit { display: flex; }
+.filter.kilitli { opacity: .45; cursor: help; }
+.filter.kilitli:hover { border-color: var(--line); }
+.stok-btn.kilitli { opacity: .45; cursor: help; }
+
+/* ---------- giris / yonetim penceresi ---------- */
+.modal-fon {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(4, 12, 28, .58); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: fon-gir .18s ease;
+}
+.modal-fon[hidden] { display: none; }
+@keyframes fon-gir { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  width: min(420px, 100%); max-height: 88vh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  animation: modal-gir .2s cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes modal-gir { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.modal-bas {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px 18px; border-bottom: 1px solid var(--line);
+  font-family: 'Manrope', sans-serif; font-size: 15px; color: var(--ink-deep);
+}
+.modal-bas button {
+  background: none; border: none; color: var(--steel); font-size: 22px;
+  cursor: pointer; line-height: 1; padding: 0 4px;
+}
+.modal-bas button:hover { color: var(--ink-deep); }
+.modal-govde { padding: 16px 18px 18px; }
+.alan { display: block; margin-bottom: 12px; font-size: 11.5px; color: var(--steel); }
+.alan input {
+  display: block; width: 100%; margin-top: 5px; padding: 10px 12px;
+  border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg-soft); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
+}
+.alan input:focus { border-color: var(--accent); }
+.ana-btn {
+  width: 100%; padding: 11px; margin-top: 4px; border-radius: 8px; cursor: pointer;
+  border: none; background: var(--ink); color: #fff;
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
+}
+[data-theme="dark"] .ana-btn { background: var(--accent); color: #04142c; }
+.ana-btn:hover { filter: brightness(1.08); }
+.ikinci-btn {
+  width: 100%; padding: 9px; margin-top: 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--steel);
+  font-family: 'Inter', sans-serif; font-size: 12.5px;
+}
+.ikinci-btn:hover { border-color: var(--accent); color: var(--ink-deep); }
+.ikinci-btn.cikis { margin-bottom: 14px; }
+.modal-not { font-size: 11px; color: var(--steel-soft); line-height: 1.5; margin: 10px 0 0; }
+.modal-not code { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+.modal-hata {
+  margin: 0 0 10px; padding: 8px 11px; border-radius: 7px;
+  background: rgba(192, 57, 43, .12); color: #c0392b; font-size: 12px;
+}
+.modal-hata[hidden] { display: none; }
+.yetki-kutulari { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 10px; }
+.tik-satir {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--text); cursor: pointer;
+}
+.tik-satir input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+.kullanici-liste { margin-bottom: 4px; }
+.kullanici-satir {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--line);
+}
+.kullanici-satir div { flex: 1; min-width: 0; }
+.kullanici-satir b { display: block; font-size: 12.5px; color: var(--ink-deep); }
+.kullanici-satir em {
+  display: block; font-style: normal; font-size: 10.5px; color: var(--steel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kullanici-satir .rozet {
+  margin-left: 6px; font-size: 9.5px; padding: 1px 6px; border-radius: 20px;
+  background: var(--bg-soft); color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.sil-btn {
+  flex: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: none; color: #c0392b; font-size: 11.5px;
+}
+.sil-btn:hover { border-color: #c0392b; }
+
+/* stok balonunda stok bolumu */
+.stok-bolum { border-top: 1px solid var(--line); }
+
+@media (max-width: 760px) {
+  .hdr .stats { display: none; }
+  .hdr-right { margin-left: auto; gap: 6px; }
+  .ticket-link { padding: 6px 9px; font-size: 11px; gap: 6px; }
+  .ticket-link > span:last-child { display: none; }
+  .yetki-btn { padding: 6px 9px; font-size: 11px; }
+  .yetki-btn span { display: none; }
+  .modal { max-height: 92vh; }
+  .yetki-kutulari { grid-template-columns: 1fr; }
+  .alan input { font-size: 16px; }
+}

@@ -1,0 +1,18 @@
+{
+  "not": "Yetkili listesi. Yonetici panelden duzenleyip indirir, bu dosyanin uzerine yazar.",
+  "guncelleme": "2026-08-31",
+  "kullanicilar": [
+    {
+      "eposta": "admin@gypenergy.com",
+      "hash": "7cc3a72432a8f2dc00c520f76cbebeece081cd807d7a8d0d3d67279305632fa1",
+      "yonetici": true,
+      "yetki": {
+        "rig": true,
+        "office": true,
+        "workshop": true,
+        "production": true,
+        "vehicle": true
+      }
+    }
+  ]
+}

@@ -163,6 +163,37 @@ Gecis 0.55 sn yumusak: filtre HER ZAMAN ayni fonksiyon listesiyle tanimli
 deger uretilemiyor ve renk aniden sicriyordu. Maske/sinir rengi SVG `fill`
 gecisiyle, isaretciler ve ust katman ogeleri opaklik gecisiyle yumusatildi.
 
+### Yetkili girisi
+
+**Bu sistem arayuz duzeyinde bir kisittir, gercek guvenlik degildir.** Site
+statik; kontrol tarayicida yapiliyor. `data.json` zaten herkese acik, yani
+kararli biri lokasyon verisine ulasabilir. Gercek koruma gerekirse veri
+Worker'a tasinmali ve orada dogrulanmalı.
+
+Kullanicilar `kullanicilar.json` dosyasindan okunur. Sifreler SHA-256 + tuz
+ile saklanir (duz metin degil). Varsayilan yonetici:
+`admin@gypenergy.com` / `gyp2026` - **ilk iste degistirin.**
+
+Yonetici panelden yetkili ekler, her tur icin ayri tik atar (kuleler, ofisler,
+kamplar, uretim kuyulari, araclar). Eklenen yetkililer once tarayiciya yazilir;
+herkes icin gecerli olmasi icin "kullanicilar.json indir" ile dosya indirilip
+sitedeki dosyanin uzerine yazilmali.
+
+Giris yapmayan kullanici: yalnizca lokasyon konumlarini gorur, sayilari ve
+araclari goremez, stok moduna giremez. Kilitli turlerin yaninda kilit simgesi
+ve "Erisebilmek icin yetkili girisi yapiniz." aciklamasi cikar.
+
+### Stok modu icerigi
+
+Stok gorunumunde yalnizca kule, ofis ve kamp isaretcileri kalir; uretim
+kuyulari ve araclar gizlenir. Balonlarda personel/ekip bilgisi yerine adres ve
+"Stoktakiler" bolumu gosterilir (icerik ileride doldurulacak).
+
+### GYP Ticket
+
+Basligin saginda `https://gypticket.onrender.com` adresine giden lacivert
+yildizli bilet baglantisi. Sayilar sola alindi.
+
 ### Renk kodu
 
 Her tür kendi rengini taşır (`--c-rig`, `--c-production`, `--c-workshop`,
