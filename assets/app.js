@@ -1668,7 +1668,11 @@
 
   function wireStok() {
     var btn = document.getElementById("stok-btn");
-    if (btn) btn.addEventListener("click", stokDegistir);
+    if (btn) btn.addEventListener("click", function () {
+      var izinli = A ? A.yetkili("stock") : true;
+      if (!izinli) { modalAc(true); return; }
+      stokDegistir();
+    });
   }
 
   /* ---------- yetkili girisi ---------- */
@@ -1723,7 +1727,10 @@
   function yetkiKutulariniKur() {
     var host = document.getElementById("yetki-kutulari");
     if (!host) return;
-    host.innerHTML = CATEGORIES.map(function (c) {
+    // CATEGORIES haritadaki varlik turleri (kule/ofis/...); Stoklar ayri bir
+    // ozellik yetkisi oldugu icin elle ekleniyor.
+    var ozel = [{ key: "stock", label: "Stoklar" }];
+    host.innerHTML = CATEGORIES.concat(ozel).map(function (c) {
       return (
         '<label class="tik-satir"><input type="checkbox" data-yetki="' + c.key + '"> ' +
         G.escapeHtml(c.label) + "</label>"
@@ -1742,7 +1749,8 @@
     host.innerHTML = '<p class="modal-not">Yükleniyor…</p>';
     var liste = await A.kullaniciListesi();
     host.innerHTML = liste.map(function (k) {
-      var yetkiler = CATEGORIES.filter(function (c) { return k.yetki[c.key]; })
+      var yetkiler = CATEGORIES.concat([{ key: "stock", label: "Stoklar" }])
+        .filter(function (c) { return k.yetki[c.key]; })
         .map(function (c) { return c.label; });
       return (
         '<div class="kullanici-satir">' +
@@ -1767,14 +1775,17 @@
       if (!yetkiliMi(c.key) && active[c.key]) active[c.key] = false;
     });
 
-    // stok modu giris ister
+    // stok modu ayri bir yetki ister ("stock"); yalnizca girisli olmak yetmez
+    var stokYetkili = A ? A.yetkili("stock") : true;
     var sb = document.getElementById("stok-btn");
     if (sb) {
-      sb.classList.toggle("kilitli", !girisli);
-      sb.disabled = !girisli;
-      sb.title = girisli ? "" : "Erişmek için yetkili girişi yapınız.";
+      sb.classList.toggle("kilitli", !stokYetkili);
+      // disabled birakilirsa tiklama hic tetiklenmez ve giris penceresi
+      // acilamaz; yalnizca gorsel olarak kilitli gosteriliyor.
+      sb.disabled = false;
+      sb.title = stokYetkili ? "" : "Erişmek için yetkili girişi yapınız.";
     }
-    if (!girisli && stokModu) stokDegistir();
+    if (!stokYetkili && stokModu) stokDegistir();
 
     var btn = document.getElementById("yetki-btn");
     var yazi = document.getElementById("yetki-btn-yazi");

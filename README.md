@@ -176,6 +176,12 @@ Jeton olmadan arac verisi hic sunucudan cikmaz.
   herkes icin gecerli olur, dosya indirip yuklemeye gerek yok
 - Varsayilan yonetici: `admin@gypenergy.com` / `gyp2026` - **ilk iste degistirin**
 
+**Onemli:** `stock` yetkisi sonradan eklendi. KV'de zaten kayitli bir
+`admin@gypenergy.com` hesabiniz varsa (daha once deploy ettiyseniz), o kayitta
+`stock` alani yoktur ve varsayilan olarak `false` sayilir. Panelden kendi
+hesabinizi acip "Stoklar" kutusuna tik atip tekrar kaydetmeniz gerekir - yeni
+kurulumlarda varsayilan yonetici otomatik `stock: true` ile olusur.
+
 **Erisim kurallari:**
 
 | | Giris yapmadan | Yetkili (ilgili tur acik) |
@@ -183,8 +189,13 @@ Jeton olmadan arac verisi hic sunucudan cikmaz.
 | Kule/ofis/kamp/kuyu **konumu** | goruluyor | goruluyor |
 | Yol tarifi | aliniyor | aliniyor |
 | Ekip listesi, sayilar | gizli | goruluyor |
-| Araclar | tamamen kapali | goruluyor |
-| Stok modu | kapali | aciliyor |
+| Araclar | tamamen kapali | `vehicle` tikli ise goruluyor |
+| Stok modu | kapali | `stock` tikli ise aciliyor |
+
+`stock`, harita varliklarindan (kule/ofis/...) **ayri bir yetki**. Bir kullaniciya
+yalniz kamp yetkisi verilirse stok moduna giremez; yalniz stok yetkisi verilirse
+kamp/kule gibi turleri goremez ama stok moduna girebilir. Panelde "Erisim
+Yetkileri" listesinin sonunda ayri bir "Stoklar" kutusu olarak gorunur.
 
 Lokasyonlar `data.json` ile birlikte statik sitede durdugu icin zaten herkese
 acik; bu yuzden onlar icin sunucu kontrolu yok, yalnizca arayuzde icerik

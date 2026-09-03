@@ -12,7 +12,7 @@
   "use strict";
 
   var OTURUM = "gyp-oturum-v2";
-  var TURLER = ["rig", "office", "workshop", "production", "vehicle"];
+  var TURLER = ["rig", "office", "workshop", "production", "vehicle", "stock"];
 
   var aktif = null;     // { eposta, yetki, yonetici }
   var jeton = null;
