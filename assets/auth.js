@@ -1,159 +1,114 @@
-/* Yetkili girisi ve yetki kontrolu.
+/* Yetkili girisi ve yetki kontrolu — Worker uzerinden.
  *
- * ONEMLI: Site statik, arkasinda sunucu yok. Kontrol tarayicida yapiliyor,
- * yani bu sistem arayuz duzeyinde bir kisittir - gercek guvenlik degildir.
- * data.json zaten herkese acik. Gercek koruma gerekirse Worker'a tasinmali.
+ * Sifre dogrulamasi artik sunucuda (Cloudflare Worker + KV) yapiliyor.
+ * Tarayici yalnizca e-posta/sifre gonderir, sunucudan imzali bir jeton alir.
+ * Jeton olmadan arac verisi hic gelmez — bu, onceki (tamamen istemci tarafi)
+ * surumden farkli olarak gercek bir koruma.
  *
- * Kullanicilar "kullanicilar.json" dosyasindan okunur. Yonetici panelden
- * ekleme/silme yapar, sonucu indirip siteye yukler.
+ * Lokasyonlar (kule/ofis/kamp/kuyu) data.json ile birlikte statik sitede
+ * durdugu icin herkese acik kalir; onlar icin sunucu kontrolu yoktur.
  */
 (function () {
   "use strict";
 
-  var DOSYA = "kullanicilar.json";
-  var YEREL = "gyp-kullanicilar";     // panelde yapilan, henuz yuklenmemis degisiklikler
-  var OTURUM = "gyp-oturum";
-  var TUZ = "gyp-2026-";              // hash'i sozluk saldirisina karsi biraz zorlastirir
-
+  var OTURUM = "gyp-oturum-v2";
   var TURLER = ["rig", "office", "workshop", "production", "vehicle"];
 
-  var kullanicilar = [];
-  var aktif = null;
+  var aktif = null;     // { eposta, yetki, yonetici }
+  var jeton = null;
   var hazirBekleyen = [];
+
+  function servisUrl() {
+    var base = (window.GYP_CONFIG && window.GYP_CONFIG.vehicleService) || "";
+    return base.replace(/\/+$/, "");
+  }
 
   function olay() {
     document.dispatchEvent(new CustomEvent("gyp-auth"));
   }
 
-  async function ozet(metin) {
-    var veri = new TextEncoder().encode(TUZ + metin);
-    var buf = await crypto.subtle.digest("SHA-256", veri);
-    return Array.from(new Uint8Array(buf))
-      .map(function (b) { return b.toString(16).padStart(2, "0"); })
-      .join("");
+  function oturumuKaydet() {
+    try {
+      if (aktif && jeton) {
+        sessionStorage.setItem(OTURUM, JSON.stringify({ jeton: jeton, kullanici: aktif }));
+      } else {
+        sessionStorage.removeItem(OTURUM);
+      }
+    } catch (e) {}
   }
 
-  function yereliOku() {
-    try { return JSON.parse(localStorage.getItem(YEREL) || "null"); } catch (e) { return null; }
-  }
-  function yereliYaz(liste) {
-    try { localStorage.setItem(YEREL, JSON.stringify(liste)); } catch (e) {}
-  }
-
-  function normalize(k) {
-    var y = {};
-    TURLER.forEach(function (t) { y[t] = !!(k.yetki && k.yetki[t]); });
-    return {
-      eposta: String(k.eposta || "").trim().toLowerCase(),
-      hash: k.hash || "",
-      yonetici: !!k.yonetici,
-      yetki: y,
-    };
+  async function istek(yol, secenek) {
+    var base = servisUrl();
+    if (!base) return { ok: false, status: 0, mesaj: "Servis tanımlı değil" };
+    secenek = secenek || {};
+    var basliklar = { "Content-Type": "application/json" };
+    if (jeton) basliklar.Authorization = "Bearer " + jeton;
+    try {
+      var r = await fetch(base + "/" + yol, {
+        method: secenek.method || "GET",
+        headers: basliklar,
+        body: secenek.gov ? JSON.stringify(secenek.gov) : undefined,
+        cache: "no-store",
+      });
+      var j = null;
+      try { j = await r.json(); } catch (e) {}
+      if (!r.ok) return { ok: false, status: r.status, mesaj: (j && j.error) || "İşlem başarısız" };
+      return Object.assign({ ok: true, status: r.status }, j || {});
+    } catch (e) {
+      return { ok: false, status: 0, mesaj: "Sunucuya ulaşılamadı" };
+    }
   }
 
   async function yukle() {
-    var yerel = yereliOku();
-    if (yerel && Array.isArray(yerel)) {
-      kullanicilar = yerel.map(normalize);
-    } else {
-      try {
-        var r = await fetch(DOSYA, { cache: "no-store" });
-        var j = r.ok ? await r.json() : null;
-        kullanicilar = (j && Array.isArray(j.kullanicilar) ? j.kullanicilar : []).map(normalize);
-      } catch (e) {
-        kullanicilar = [];
-      }
+    var kayit = null;
+    try { kayit = JSON.parse(sessionStorage.getItem(OTURUM) || "null"); } catch (e) {}
+    if (kayit && kayit.jeton) {
+      jeton = kayit.jeton;
+      aktif = kayit.kullanici;
+      // jeton hala gecerli mi kontrol et (suresi dolmus olabilir)
+      var r = await istek("oturum/ben");
+      if (!r.ok) { jeton = null; aktif = null; oturumuKaydet(); }
+      else aktif = r.kullanici;
     }
-
-    // Hic yonetici yoksa varsayilan bir hesap olustur ki sistem kilitlenmesin.
-    if (!kullanicilar.some(function (k) { return k.yonetici; })) {
-      kullanicilar.push(normalize({
-        eposta: "admin@gypenergy.com",
-        hash: await ozet("gyp2026"),
-        yonetici: true,
-        yetki: { rig: true, office: true, workshop: true, production: true, vehicle: true },
-      }));
-    }
-
-    // onceki oturumu geri yukle
-    try {
-      var o = JSON.parse(sessionStorage.getItem(OTURUM) || "null");
-      if (o && o.eposta) {
-        var b = bul(o.eposta);
-        if (b) aktif = b;
-      }
-    } catch (e) {}
-
     hazirBekleyen.forEach(function (f) { f(); });
     hazirBekleyen = [];
     olay();
   }
 
-  function bul(eposta) {
-    var e = String(eposta || "").trim().toLowerCase();
-    return kullanicilar.filter(function (k) { return k.eposta === e; })[0] || null;
-  }
-
   async function girisYap(eposta, sifre) {
-    var k = bul(eposta);
-    if (!k) return { ok: false, mesaj: "E-posta veya şifre hatalı." };
-    var h = await ozet(sifre || "");
-    if (h !== k.hash) return { ok: false, mesaj: "E-posta veya şifre hatalı." };
-    aktif = k;
-    try { sessionStorage.setItem(OTURUM, JSON.stringify({ eposta: k.eposta })); } catch (e) {}
+    var r = await istek("oturum/giris", { method: "POST", gov: { eposta: eposta, sifre: sifre } });
+    if (!r.ok) return { ok: false, mesaj: r.mesaj || "E-posta veya şifre hatalı." };
+    jeton = r.jeton;
+    aktif = r.kullanici;
+    oturumuKaydet();
     olay();
     return { ok: true };
   }
 
   function cikisYap() {
     aktif = null;
-    try { sessionStorage.removeItem(OTURUM); } catch (e) {}
+    jeton = null;
+    oturumuKaydet();
     olay();
+  }
+
+  async function kullaniciListesi() {
+    var r = await istek("yonetim/kullanicilar");
+    return r.ok ? r.kullanicilar : [];
   }
 
   async function kullaniciEkle(eposta, sifre, yetki, yonetici) {
-    var e = String(eposta || "").trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) {
-      return { ok: false, mesaj: "Geçerli bir e-posta adresi girin." };
-    }
-    if (!sifre || sifre.length < 4) {
-      return { ok: false, mesaj: "Şifre en az 4 karakter olmalı." };
-    }
-    var h = await ozet(sifre);
-    var mevcut = bul(e);
-    if (mevcut) {
-      mevcut.hash = h;
-      mevcut.yetki = normalize({ yetki: yetki }).yetki;
-      mevcut.yonetici = !!yonetici;
-    } else {
-      kullanicilar.push(normalize({ eposta: e, hash: h, yetki: yetki, yonetici: yonetici }));
-    }
-    yereliYaz(kullanicilar);
-    olay();
-    return { ok: true, guncellendi: !!mevcut };
+    var r = await istek("yonetim/kullanici", {
+      method: "POST",
+      gov: { eposta: eposta, sifre: sifre, yetki: yetki, yonetici: !!yonetici },
+    });
+    if (!r.ok) return { ok: false, mesaj: r.mesaj };
+    return { ok: true, guncellendi: !!r.guncellendi };
   }
 
-  function kullaniciSil(eposta) {
-    var e = String(eposta || "").trim().toLowerCase();
-    if (aktif && aktif.eposta === e) {
-      return { ok: false, mesaj: "Kendi hesabınızı silemezsiniz." };
-    }
-    var kalan = kullanicilar.filter(function (k) { return k.eposta !== e; });
-    if (!kalan.some(function (k) { return k.yonetici; })) {
-      return { ok: false, mesaj: "En az bir yönetici kalmalı." };
-    }
-    kullanicilar = kalan;
-    yereliYaz(kullanicilar);
-    olay();
-    return { ok: true };
-  }
-
-  function disaAktar() {
-    return JSON.stringify({
-      not: "Yetkili listesi. Siteye yuklenince herkes icin gecerli olur.",
-      guncelleme: new Date().toISOString().slice(0, 10),
-      kullanicilar: kullanicilar,
-    }, null, 2);
+  async function kullaniciSil(eposta) {
+    var r = await istek("yonetim/kullanici", { method: "DELETE", gov: { eposta: eposta } });
+    return r.ok ? { ok: true } : { ok: false, mesaj: r.mesaj };
   }
 
   window.GYPAuth = {
@@ -162,10 +117,10 @@
     hazir: function (f) { hazirBekleyen.push(f); },
     girisYap: girisYap,
     cikisYap: cikisYap,
+    kullaniciListesi: kullaniciListesi,
     kullaniciEkle: kullaniciEkle,
     kullaniciSil: kullaniciSil,
-    disaAktar: disaAktar,
-    liste: function () { return kullanicilar.slice(); },
+    jetonAl: function () { return jeton; },
     aktif: function () { return aktif; },
     girisliMi: function () { return !!aktif; },
     yoneticiMi: function () { return !!(aktif && aktif.yonetici); },

@@ -163,25 +163,57 @@ Gecis 0.55 sn yumusak: filtre HER ZAMAN ayni fonksiyon listesiyle tanimli
 deger uretilemiyor ve renk aniden sicriyordu. Maske/sinir rengi SVG `fill`
 gecisiyle, isaretciler ve ust katman ogeleri opaklik gecisiyle yumusatildi.
 
-### Yetkili girisi
+### Yetkili girisi (Worker uzerinden)
 
-**Bu sistem arayuz duzeyinde bir kisittir, gercek guvenlik degildir.** Site
-statik; kontrol tarayicida yapiliyor. `data.json` zaten herkese acik, yani
-kararli biri lokasyon verisine ulasabilir. Gercek koruma gerekirse veri
-Worker'a tasinmali ve orada dogrulanmalı.
+Sifre dogrulamasi artik sunucuda yapiliyor (`arac-servisi` Worker + KV), bu
+onceki tamamen istemci-tarafi surumden farkli olarak gercek bir korumadir.
+Jeton olmadan arac verisi hic sunucudan cikmaz.
 
-Kullanicilar `kullanicilar.json` dosyasindan okunur. Sifreler SHA-256 + tuz
-ile saklanir (duz metin degil). Varsayilan yonetici:
-`admin@gypenergy.com` / `gyp2026` - **ilk iste degistirin.**
+- Sifreler PBKDF2 (120.000 tur) + tuz ile saklanir, duz metin hicbir yerde yok
+- Giris HMAC ile imzali bir jeton doner (12 saat gecerli); jeton kurcalanirsa
+  imza tutmaz, sunucu 401 doner
+- Kullanicilar Cloudflare KV'de tutulur; panelden yapilan degisiklikler aninda
+  herkes icin gecerli olur, dosya indirip yuklemeye gerek yok
+- Varsayilan yonetici: `admin@gypenergy.com` / `gyp2026` - **ilk iste degistirin**
 
-Yonetici panelden yetkili ekler, her tur icin ayri tik atar (kuleler, ofisler,
-kamplar, uretim kuyulari, araclar). Eklenen yetkililer once tarayiciya yazilir;
-herkes icin gecerli olmasi icin "kullanicilar.json indir" ile dosya indirilip
-sitedeki dosyanin uzerine yazilmali.
+**Erisim kurallari:**
 
-Giris yapmayan kullanici: yalnizca lokasyon konumlarini gorur, sayilari ve
-araclari goremez, stok moduna giremez. Kilitli turlerin yaninda kilit simgesi
-ve "Erisebilmek icin yetkili girisi yapiniz." aciklamasi cikar.
+| | Giris yapmadan | Yetkili (ilgili tur acik) |
+|---|---|---|
+| Kule/ofis/kamp/kuyu **konumu** | goruluyor | goruluyor |
+| Yol tarifi | aliniyor | aliniyor |
+| Ekip listesi, sayilar | gizli | goruluyor |
+| Araclar | tamamen kapali | goruluyor |
+| Stok modu | kapali | aciliyor |
+
+Lokasyonlar `data.json` ile birlikte statik sitede durdugu icin zaten herkese
+acik; bu yuzden onlar icin sunucu kontrolu yok, yalnizca arayuzde icerik
+gizleniyor. Araclar ise Worker'dan geldigi icin gercekten korunuyor.
+
+### Worker kurulumu (KV + oturum anahtari)
+
+`arac-servisi` klasorunde, `wrangler deploy` etmeden once:
+
+```
+npx wrangler kv namespace create KULLANICILAR
+```
+
+Ciktidaki `id` degerini `wrangler.toml` icindeki `BURAYA_KV_ID_YAZIN` yerine
+yazin. Sonra:
+
+```
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+npx wrangler secret put OTURUM_ANAHTARI
+```
+
+(uretilen degeri yapistirin). Son olarak:
+
+```
+npx wrangler deploy
+```
+
+`kullanicilar.json` dosyasina artik gerek yok, kaldirildi.
+
 
 ### Stok modu icerigi
 

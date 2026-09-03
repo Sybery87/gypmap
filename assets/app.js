@@ -280,6 +280,16 @@
     if (rig.note) h += " · " + G.escapeHtml(rig.note);
     h += "</div></div>";
     h += '<div class="pop-body">';
+    if (!icerikGorunur("rig")) {
+      h += '<p class="sec-label">Konum</p>';
+      h += '<p class="empty-note">Ekip bilgisi için yetkili girişi yapınız.</p>';
+      if (rig.address) {
+        h += '<p class="sec-label" style="margin-top:10px">Adres</p>' +
+             '<p class="pop-address">' + G.escapeHtml(rig.address) + "</p>";
+      }
+      h += "</div>";
+      return h + dirButton(rig.lat, rig.lon, rig.name);
+    }
     h += '<p class="sec-label">Güncel Ekip</p>';
     if (!rig.employees || rig.employees.length === 0) {
       h += '<p class="empty-note">Henüz personel atanmadı.</p>';
@@ -672,6 +682,16 @@
     return base.replace(/\/+$/, "");
   }
 
+  // arac servisi yetki ister; oturumdan gelen jeton her istege eklenir
+  function vehicleFetch(url) {
+    var basliklar = {};
+    if (window.GYPAuth) {
+      var j = window.GYPAuth.jetonAl && window.GYPAuth.jetonAl();
+      if (j) basliklar.Authorization = "Bearer " + j;
+    }
+    return fetch(url, { cache: "no-store", headers: basliklar });
+  }
+
   /* Yon bilgisi: once saglayicidan, yoksa onceki konumdan hesapla,
      o da yoksa bilinen son yonu kullan. Hicbiri yoksa null doner ve
      ok yerine yonsuz simge gosterilir (kuzeye bakan yaniltici ok cizmeyiz). */
@@ -915,7 +935,7 @@
     if (vehicleLoading) return Promise.resolve();
     vehicleLoading = true;
 
-    return fetch(base + "/last", { cache: "no-store" })
+    return vehicleFetch(base + "/last")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -927,7 +947,10 @@
       })
       .catch(function (e) {
         // servis dusse bile harita calismaya devam eder
-        if (!silent) setVehicleStatus("Araç verisi alınamadı (" + e.message + ")", "warn");
+        var msg = /HTTP 401|HTTP 403/.test(e.message)
+          ? "Araç verisi için yetkili girişi gerekiyor"
+          : "Araç verisi alınamadı (" + e.message + ")";
+        if (!silent) setVehicleStatus(msg, "warn");
         console.warn("arac servisi:", e);
       })
       .then(function () { vehicleLoading = false; });
@@ -1086,7 +1109,7 @@
     });
 
     setVehicleStatus("İz yükleniyor…");
-    fetch(base + "/locations?" + qs.toString(), { cache: "no-store" })
+    vehicleFetch(base + "/locations?" + qs.toString())
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -1524,6 +1547,8 @@
       if (k !== "all") {
         var izin = yetkiliMi(k);
         b.classList.toggle("kilitli", !izin);
+        // sayilar yalnizca icerik yetkisi olana gorunur
+        b.classList.toggle("sayisiz", izin && !icerikGorunur(k));
         b.title = izin ? "" : "Erişmek için yetkili girişi yapınız.";
       }
     });
@@ -1649,7 +1674,22 @@
   /* ---------- yetkili girisi ---------- */
   var A = window.GYPAuth;
 
+  /* Lokasyonlar (kule/ofis/kamp/kuyu) herkese acik: konum gorulur, yol tarifi
+     alinir. Icerik (ekip listesi, sayilar) ve ARACLAR giris ister. */
+  var ACIK_TURLER = ["rig", "office", "workshop", "production"];
+
+  function girisliMi() {
+    return A ? A.girisliMi() : true;
+  }
+
   function yetkiliMi(tur) {
+    if (!A) return true;
+    if (A.girisliMi()) return A.yetkili(tur);
+    return ACIK_TURLER.indexOf(tur) !== -1;
+  }
+
+  // ekip listesi, personel sayisi gibi ayrintilar
+  function icerikGorunur(tur) {
     return A ? A.yetkili(tur) : true;
   }
 
@@ -1658,7 +1698,7 @@
     if (!fon) return;
     fon.hidden = !goster;
     if (goster) {
-      yonetimTazele();
+      if (A && A.yoneticiMi()) yonetimTazele();
       var g = document.getElementById("giris-ekrani");
       var y = document.getElementById("yonetim-ekrani");
       var yon = A && A.yoneticiMi();
@@ -1691,7 +1731,7 @@
     }).join("");
   }
 
-  function yonetimTazele() {
+  async function yonetimTazele() {
     if (!A) return;
     var kim = document.getElementById("yonetim-kim");
     var akt = A.aktif();
@@ -1699,7 +1739,8 @@
 
     var host = document.getElementById("kullanici-liste");
     if (!host) return;
-    var liste = A.liste();
+    host.innerHTML = '<p class="modal-not">Yükleniyor…</p>';
+    var liste = await A.kullaniciListesi();
     host.innerHTML = liste.map(function (k) {
       var yetkiler = CATEGORIES.filter(function (c) { return k.yetki[c.key]; })
         .map(function (c) { return c.label; });
@@ -1806,7 +1847,7 @@
         document.getElementById("yeni-yonetici").checked = false;
         document.querySelectorAll("[data-yetki]").forEach(function (k) { k.checked = false; });
         yonetimTazele();
-      });
+      }).catch(function () { hata("yonetim-hata", "Sunucuya ulaşılamadı."); });
     });
 
     var liste = document.getElementById("kullanici-liste");
@@ -1814,19 +1855,10 @@
       var b = e.target.closest("[data-sil]");
       if (!b) return;
       if (!confirm(b.dataset.sil + " silinsin mi?")) return;
-      var r = A.kullaniciSil(b.dataset.sil);
-      if (!r.ok) hata("yonetim-hata", r.mesaj);
-      else { hata("yonetim-hata", ""); yonetimTazele(); }
-    });
-
-    var indir = document.getElementById("liste-indir");
-    if (indir) indir.addEventListener("click", function () {
-      var blob = new Blob([A.disaAktar()], { type: "application/json" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "kullanicilar.json";
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      A.kullaniciSil(b.dataset.sil).then(function (r) {
+        if (!r.ok) hata("yonetim-hata", r.mesaj);
+        else { hata("yonetim-hata", ""); yonetimTazele(); }
+      });
     });
 
     // yonetim ekranindan cikis

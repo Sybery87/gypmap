@@ -1,0 +1,10 @@
+{
+  "name": "gyp-arac-servisi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/policy.test.js"
+  }
+}

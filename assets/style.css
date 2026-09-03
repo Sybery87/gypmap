@@ -1081,3 +1081,6 @@ html[data-theme="light"] .gyp-marker .chip {
   .yetki-kutulari { grid-template-columns: 1fr; }
   .alan input { font-size: 16px; }
 }
+
+/* giris yapmayan kullanicida sayilar gizli, katman yine acilabilir */
+.filter.sayisiz .filter-count { display: none; }
