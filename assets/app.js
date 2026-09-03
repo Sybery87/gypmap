@@ -1496,7 +1496,9 @@
   var active = { rig: false, office: false, workshop: false, production: false, vehicle: false };
 
   function allOn() {
-    var izinli = CATEGORIES.filter(function (c) { return yetkiliMi(c.key); });
+    var izinli = CATEGORIES.filter(function (c) {
+      return yetkiliMi(c.key) && (!stokModu || STOK_TURLERI.indexOf(c.key) !== -1);
+    });
     return izinli.length > 0 && izinli.every(function (c) { return active[c.key]; });
   }
 
@@ -1526,10 +1528,15 @@
       var b = e.target.closest(".filter");
       if (!b) return;
       var k = b.dataset.key;
+      // stok modunda kapsam disi turler (uretim kuyusu, arac) tiklanamaz
+      if (stokModu && k !== "all" && STOK_TURLERI.indexOf(k) === -1) return;
       if (k !== "all" && !yetkiliMi(k)) { modalAc(true); return; }
       if (k === "all") {
+        var kapsam = CATEGORIES.filter(function (c) {
+          return !stokModu || STOK_TURLERI.indexOf(c.key) !== -1;
+        });
         var turnOff = allOn();
-        CATEGORIES.forEach(function (c) { active[c.key] = yetkiliMi(c.key) ? !turnOff : false; });
+        kapsam.forEach(function (c) { active[c.key] = yetkiliMi(c.key) ? !turnOff : false; });
       } else {
         active[k] = !active[k];
       }
@@ -1546,10 +1553,13 @@
       b.setAttribute("aria-pressed", on ? "true" : "false");
       if (k !== "all") {
         var izin = yetkiliMi(k);
-        b.classList.toggle("kilitli", !izin);
+        var stokDisi = stokModu && STOK_TURLERI.indexOf(k) === -1;
+        b.classList.toggle("kilitli", !izin || stokDisi);
         // sayilar yalnizca icerik yetkisi olana gorunur
         b.classList.toggle("sayisiz", izin && !icerikGorunur(k));
-        b.title = izin ? "" : "Erişmek için yetkili girişi yapınız.";
+        b.title = !izin
+          ? "Erişmek için yetkili girişi yapınız."
+          : stokDisi ? "Stok görünümünde kullanılamaz." : "";
       }
     });
     // hicbiri secili degilse "Tumu" dikkat cekmeye devam etsin
@@ -1607,14 +1617,10 @@
   var STOK_TURLERI = ["rig", "office", "workshop"];
 
   function stokPopupHtml(m) {
-    var h =
-      '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(m.label) + "</p>" +
-      '<div class="pop-city">' + G.escapeHtml(m.altBilgi || "") + "</div></div>";
-    if (m.adres) {
-      h += '<div class="pop-body"><p class="sec-label">Adres</p>' +
-           '<p class="pop-address">' + G.escapeHtml(m.adres) + "</p></div>";
-    }
-    h += '<div class="pop-body stok-bolum"><p class="sec-label">Stoktakiler</p>' +
+    // kasitli olarak sade: sehir/adres/ekip gibi bilgiler burada YOK.
+    // amac stok bakarken ekranda baska bilgiyle karismamasi.
+    var h = '<div class="pop-head"><p class="pop-title">' + G.escapeHtml(m.label) + "</p></div>";
+    h += '<div class="pop-body stok-bolum"><p class="sec-label">Stoktakiler:</p>' +
          '<p class="empty-note">Henüz kayıt girilmedi.</p></div>';
     return h;
   }

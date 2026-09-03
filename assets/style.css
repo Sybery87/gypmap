@@ -896,18 +896,16 @@ html[data-theme="light"] .gyp-marker .chip {
 /* maske ve sinir cizgisi rengi de yumusak gecsin */
 .leaflet-overlay-pane path { transition: fill .55s ease, stroke .55s ease; }
 
+/* Stok modunda gorunen isaretciler (kule/ofis/kamp) NORMAL kalir: net ve
+   tiklanabilir. Araclar zaten stok gorunumunde hic cizilmiyor, bu yuzden
+   ayrica soluklastirmaya gerek yok — soluklastirma yalnizca kafa karistirirdi. */
 .gyp-marker, .ghost-marker, .gyp-label {
   transition: opacity .45s ease;
 }
-.stok-modu .gyp-marker,
-.stok-modu .ghost-marker { pointer-events: none; opacity: .38; }
-.stok-modu .gyp-label { opacity: .3; }
-.stok-modu .leaflet-popup { display: none; }
-.veh-summary, .veh-panel-btn, .zoom-hint, .legend {
+.veh-summary, .zoom-hint, .legend {
   transition: opacity .3s ease, transform .3s ease;
 }
 .stok-modu .veh-summary,
-.stok-modu .veh-panel-btn,
 .stok-modu .zoom-hint,
 .stok-modu .legend {
   opacity: 0; transform: translateY(-6px); pointer-events: none;

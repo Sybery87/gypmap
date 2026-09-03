@@ -226,11 +226,25 @@ npx wrangler deploy
 `kullanicilar.json` dosyasina artik gerek yok, kaldirildi.
 
 
-### Stok modu icerigi
+### Stok modu
 
-Stok gorunumunde yalnizca kule, ofis ve kamp isaretcileri kalir; uretim
-kuyulari ve araclar gizlenir. Balonlarda personel/ekip bilgisi yerine adres ve
-"Stoktakiler" bolumu gosterilir (icerik ileride doldurulacak).
+Kule/ofis/kamp isaretcileri stok modunda **NET ve tiklanabilir** kalir —
+soluklastirma ve pointer-events:none kaldirildi, cunku amac stok bilgisine
+odaklanmak, lokasyonlari gizlemek degil. Balon acilir ama icerigi kasitli
+sade: yalniz isim + "Stoktakiler:" basligi (sehir, adres, ekip yok — bu
+bilgiler "diger seylerle karismasin" prensibine gore stok gorunumunde
+gosterilmiyor).
+
+Uretim kuyulari ve araclar stok gorunumunun disinda; filtre seridinde kilit
+simgesiyle isaretlenirler ve tiklanmalari hicbir sey yapmaz (yetkili girisi
+istemez — bu ayri bir "yetkisizlik" degil, sadece stok kapsami disinda
+olduklari icin boyle). "Tumu" dugmesi de stok modundayken yalnizca kule/ofis/
+kamp arasinda gecis yapar.
+
+Sag ustteki "Liste" paneli stok modunda da calisir; yalniz gorunen turleri
+(kule/ofis/kamp) listeler ve arama yapılabilir — mevcut liste altyapisi zaten
+`active[]` durumuna gore filtreledigi icin ek kod gerekmedi.
+
 
 ### GYP Ticket
 
