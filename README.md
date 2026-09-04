@@ -1,7 +1,6 @@
-# GYP Lokasyon Haritası
+# GYP Map
 
-Sondaj kulesi, üretim kuyusu ve ofis/kamp lokasyonlarının uydu haritası üzerinde
-gösterildiği statik site. Sunucu, veritabanı yok — tüm veri `data.json` içinde.
+GYP ile ilgili oluşumlar, tek sitede.
 
 ## Yapı
 
