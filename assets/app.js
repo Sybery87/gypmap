@@ -928,7 +928,8 @@
     el.style.display = text ? "block" : "none";
   }
 
-  function loadVehicles(silent) {
+  function loadVehicles(silent, denemeNo) {
+    denemeNo = denemeNo || 0;
     var base = vehicleServiceUrl();
     if (!base) {
       if (!silent) setVehicleStatus("Araç servisi tanımlı değil", "warn");
@@ -939,23 +940,39 @@
 
     return vehicleFetch(base + "/last")
       .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
+        if (!r.ok) {
+          var err = new Error("HTTP " + r.status);
+          err.status = r.status;
+          throw err;
+        }
         return r.json();
       })
       .then(function (j) {
         if (!j || j.ok === false) throw new Error(j && j.error ? j.error : "Geçersiz cevap");
         drawVehicles(Array.isArray(j.data) ? j.data : []);
         setVehicleStatus("");
+        vehicleLoading = false;
       })
       .catch(function (e) {
-        // servis dusse bile harita calismaya devam eder
-        var msg = /HTTP 401|HTTP 403/.test(e.message)
+        vehicleLoading = false;
+        var yetkiSorunu = e.status === 401 || e.status === 403;
+        // Gecici sunucu/ag hatasi olabilir (502/503/504, kopan baglanti).
+        // Kullaniciya hemen hata gostermeden, artan bir gecikmeyle iki kez
+        // daha sessizce dene. Yetki hatalari (401/403) tekrar denemekle
+        // duzelmeyecegi icin hemen bildirilir.
+        if (!yetkiSorunu && denemeNo < 2) {
+          return new Promise(function (resolve) {
+            setTimeout(function () {
+              resolve(loadVehicles(silent, denemeNo + 1));
+            }, 1200 * (denemeNo + 1));
+          });
+        }
+        var msg = yetkiSorunu
           ? "Araç verisi için yetkili girişi gerekiyor"
           : "Araç verisi alınamadı (" + e.message + ")";
         if (!silent) setVehicleStatus(msg, "warn");
         console.warn("arac servisi:", e);
-      })
-      .then(function () { vehicleLoading = false; });
+      });
   }
 
   function drawVehicles(list) {

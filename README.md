@@ -131,6 +131,16 @@ icin sonraki ziyaretlerde aninda geliyor.
 Yon bilinmiyorsa ok yerine yonsuz daire gosterilir; kuzeye bakan yaniltici ok
 cizilmiyor.
 
+### Gecici hatalarda otomatik tekrar deneme
+
+`loadVehicles` bir istekte HTTP 502/503/504 veya ag hatasi alirsa, kullaniciya
+hemen hata gostermeden artan gecikmelerle (1.2sn, 2.4sn) iki kez daha sessizce
+dener. 401/403 (yetki) hatalarinda tekrar denenmez. Sunucu tarafinda da ayni
+mantik var (`arac-servisi/src/index.js`, `callUpstream`) - ikisi birlikte
+calisir. Tum denemeler basarisiz olursa (~5 saniye sonra) "Araç verisi
+alınamadı" mesaji gorunur hale gelir.
+
+
 ### Yon deposu
 
 Eski surumler saglayicidan gelen `speedDirection: 0` degerini "tam kuzey" sanip
