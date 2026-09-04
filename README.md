@@ -378,3 +378,20 @@ Slogan cumle bicimi (yalniz ilk harf buyuk) ve Fraunces italic ile yaziliyor -
 kurumsal Manrope basliktan bilerek ayrisan, zarif bir serif. Mobilde uzun
 metin `white-space: normal` ile sarilir, tasma olmaz.
 
+## Sag ustteki sayilar (Ofis/Kamp/Arac eklendi)
+
+Baslikta artik 6 sayi var: Aktif Kule, Ofis, Kamp, Uretim Kuyusu, Arac, Saha
+Personeli. Her biri kendi turunun yetkisine gore ayri ayri kontrol edilir
+(`statYaz()`, `assets/app.js`). Yetkisi olmayan icin gercekten **"*"**
+yazilir - onceki surumdeki gibi sadece soluklastirma degil, DOM'da rakam hic
+bulunmaz.
+
+Anonim (giris yapmamis) kullanici TUM sayilari "*" gorur - yalniz konum
+gorunur, sayi degil. Bu, filtre rozetlerindeki mevcut davranisla tutarlidir
+(kurulumda net belirtilmisti: "hicbir seyin sayi bilgisini goremesin").
+Giris yapan kullanici yalniz kendi yetkili oldugu turlerin sayisini gorur.
+
+Yildizli ogenin uzerine gelince "Erişmek için yetkili girişi yapınız."
+ipucu cikar. Yetki degistiginde (giris/cikis, arac verisi guncellenince)
+`statlariGuncelle()` tum sayilari yeniden degerlendirir.
+

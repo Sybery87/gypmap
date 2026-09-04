@@ -455,19 +455,7 @@
       }
     });
 
-    document.getElementById("stat-rigs").textContent = data.rigs.length;
-    var siteEl = document.getElementById("stat-sites");
-    if (siteEl) siteEl.textContent = (data.productionSites || []).length;
-    var counts = { rig: 0, office: 0, workshop: 0, production: 0 };
-    markers.forEach(function (m) { counts[m.cat] = (counts[m.cat] || 0) + 1; });
-    Object.keys(counts).forEach(function (k) {
-      var el = document.getElementById("cnt-" + k);
-      if (el) el.textContent = counts[k];
-    });
-    var people = data.rigs.reduce(function (s, r) {
-      return s + (r.employees ? r.employees.length : 0);
-    }, 0);
-    document.getElementById("stat-people").textContent = people > 0 ? people : "—";
+    statlariGuncelle();
     document.getElementById("updated-at").textContent = G.formatDate(data.updatedAt) || "—";
 
     // Dar ekranda ulke geneli gorunumu buyuk bosluk birakiyor; acilista
@@ -1029,6 +1017,7 @@
 
     var el = document.getElementById("cnt-vehicle");
     if (el) el.textContent = Object.keys(vehicleMarkers).length;
+    statlariGuncelle();
 
     lastVehicles = list.filter(function (v) {
       return Number.isFinite(v.latitude) && Number.isFinite(v.longitude);
@@ -1524,13 +1513,13 @@
   function buildFilters() {
     var host = document.getElementById("filters");
     var html =
-      '<button type="button" class="filter all" data-key="all" aria-pressed="false">' +
+      '<button type="button" class="filter all" data-key="all" aria-pressed="false" tabindex="-1">' +
       '<span class="filter-icon">' + ALL_SVG + "</span>" +
       "<span>Tümü</span></button>";
 
     html += CATEGORIES.map(function (c) {
       return (
-        '<button type="button" class="filter" data-key="' + c.key + '" aria-pressed="false">' +
+        '<button type="button" class="filter" data-key="' + c.key + '" aria-pressed="false" tabindex="-1">' +
         '<span class="filter-icon">' + G.GLYPHS[c.glyph] + "</span>" +
         "<span>" + c.label + "</span>" +
         '<span class="filter-count" id="cnt-' + c.key + '">0</span>' +
@@ -1542,6 +1531,15 @@
       );
     }).join("");
     host.innerHTML = html;
+
+    // Butona tiklamak tarayicida odak alir; odaklanan eleman yatay
+    // kaydirilan bu seritte otomatik olarak gorunume kaydiriliyordu -
+    // "Araclar" gibi en sagdaki bir filtreye basinca serit tamamen saga
+    // kayip "Tumu" ekran disinda kalıyordu. Fare tiklamasinda odak almayi
+    // engelliyoruz; klavye ile Tab tuşuyla gezinme hala calisir.
+    host.addEventListener("mousedown", function (e) {
+      if (e.target.closest(".filter")) e.preventDefault();
+    });
 
     host.addEventListener("click", function (e) {
       var b = e.target.closest(".filter");
@@ -1722,6 +1720,42 @@
     return A ? A.yetkili(tur) : true;
   }
 
+  /* Sag ustteki sayilar VE filtre rozetleri buradan besleniyor. Her sayi
+     kendi turunun yetkisine bakar; yetkisizse gercekten "*" yazilir
+     (yalnizca soluklastirma degil — DOM'da rakam hic bulunmaz). */
+  function statYaz(id, tur, deger) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var acik = icerikGorunur(tur);
+    el.textContent = acik ? deger : "*";
+    el.classList.toggle("kilit-yildiz", !acik);
+    if (el.parentElement) {
+      el.parentElement.title = acik ? "" : "Erişmek için yetkili girişi yapınız.";
+    }
+  }
+
+  function statlariGuncelle() {
+    if (!data) return;
+
+    var counts = { rig: 0, office: 0, workshop: 0, production: 0 };
+    markers.forEach(function (m) { counts[m.cat] = (counts[m.cat] || 0) + 1; });
+    Object.keys(counts).forEach(function (k) {
+      var el = document.getElementById("cnt-" + k);
+      if (el) el.textContent = counts[k]; // filtre rozeti: CSS "sayisiz" ile ayrica gizlenir
+    });
+
+    statYaz("stat-rigs", "rig", data.rigs.length);
+    statYaz("stat-offices", "office", counts.office || 0);
+    statYaz("stat-camps", "workshop", counts.workshop || 0);
+    statYaz("stat-sites", "production", (data.productionSites || []).length);
+    statYaz("stat-vehicles", "vehicle", Object.keys(vehicleMarkers).length);
+
+    var people = data.rigs.reduce(function (s, r) {
+      return s + (r.employees ? r.employees.length : 0);
+    }, 0);
+    statYaz("stat-people", "rig", people > 0 ? people : "—");
+  }
+
   function modalAc(goster) {
     var fon = document.getElementById("giris-fon");
     if (!fon) return;
@@ -1791,9 +1825,9 @@
   function yetkiUygula() {
     var girisli = A ? A.girisliMi() : true;
 
-    // baslik: sayilar yalnizca girisli kullaniciya
-    var st = document.getElementById("stats");
-    if (st) st.classList.toggle("kilitli", !girisli);
+    // sag ustteki sayilar: her biri kendi turunun yetkisine gore
+    // yeniden yazilir (yetkisizde gercek "*", soluklastirma degil)
+    statlariGuncelle();
 
     // yetkisiz katmanlar kapatilir
     CATEGORIES.forEach(function (c) {

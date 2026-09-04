@@ -697,13 +697,19 @@ h1.title {
     flex-direction: row; align-items: center; justify-content: space-between;
     gap: 10px; padding: 8px 12px;
   }
-  .brand { gap: 9px; }
+  .brand { gap: 9px; min-width: 0; flex: 1 1 auto; }
+  .brand > div { min-width: 0; overflow: hidden; }
   .logo { height: 21px; }
   .logo-wrap { padding: 3px 6px; border-radius: 6px; }
-  .vdiv { height: 22px; }
-  .company { font-size: 8px; letter-spacing: .1em; margin: 0 0 1px; }
-  h1.title { font-size: 13px; }
-  .hdr-right { width: auto; gap: 8px; }
+  .vdiv { height: 22px; flex: none; }
+  .company {
+    font-size: 8px; letter-spacing: .1em; margin: 0 0 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  h1.title {
+    font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hdr-right { width: auto; gap: 8px; flex: none; }
   .iconbtn { width: 34px; height: 34px; }
   .iconbtn svg { width: 15px; height: 15px; }
 
@@ -730,6 +736,20 @@ h1.title {
   .veh-summary { top: 44px; }
   .leaflet-control-zoom { margin-top: 78px !important; margin-left: 8px !important; }
   .leaflet-control-zoom a { width: 30px !important; height: 30px !important; line-height: 30px !important; }
+}
+
+/* Cok dar ekranlarda ("GÜNEY YILDIZI PETROL MAP" + slogan) tek satirda bile
+   sikisik kaliyordu. Sloganin dekoratif oldugu, marka adinin ise her zaman
+   okunur kalmasi gerektigi icin dar ekranda slogan gizlenir ve marka adi
+   kisa haline ("GYP") gecer; boylece "MAP" ibaresi her zaman gorunur kalir. */
+.company-short { display: none; }
+@media (max-width: 440px) {
+  h1.title { display: none; }
+  .brand { gap: 7px; }
+  .vdiv { display: none; }
+  .company { font-size: 11px; letter-spacing: .09em; }
+  .company-full { display: none; }
+  .company-short { display: inline; }
 }
 
 /* ---------- balon yuksekligi ----------
@@ -971,8 +991,7 @@ html[data-theme="light"] .gyp-marker .chip {
 .yetki-btn.on { border-color: var(--accent); color: var(--accent); }
 
 /* girisi olmayan kullanicida sayilar gizli */
-.stats.kilitli b { color: var(--steel-soft); }
-.stats.kilitli { opacity: .5; }
+.stats b.kilit-yildiz { color: var(--steel-soft); cursor: help; }
 
 /* ---------- kilit rozetleri ---------- */
 .kilit {
