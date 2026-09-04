@@ -93,6 +93,7 @@ html, body {
   letter-spacing: .13em; color: var(--accent); text-transform: uppercase;
   margin: 0 0 2px; white-space: nowrap;
 }
+.company-map { color: #dfae4f; }
 h1.title {
   font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 19px;
   letter-spacing: -.01em; margin: 0; color: var(--ink-deep); white-space: nowrap;

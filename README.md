@@ -1,6 +1,7 @@
-# GYP Map
+# GYP Lokasyon Haritası
 
-GYP ile ilgili oluşumlar, tek sitede.
+Sondaj kulesi, üretim kuyusu ve ofis/kamp lokasyonlarının uydu haritası üzerinde
+gösterildiği statik site. Sunucu, veritabanı yok — tüm veri `data.json` içinde.
 
 ## Yapı
 
@@ -366,4 +367,11 @@ blok (`.tb` sinifi). Uretim kuyusu simgesi ise onceki kule ikonu olan atbasi
 `makeIcon()` her ikisi icin de indekse gore animasyon gecikmesi uyguluyor,
 boylece ayni turdeki tum isaretciler ayni anda hareket etmiyor (5 farkli faz).
 Eski depolama-tanki uretim kuyusu simgesi tamamen kaldirildi.
+
+## Baslik metni
+
+Sekme basligi: "GYP Map". Site basliginda "GÜNEY YILDIZI PETROL" yaninda
+`.company-map` sinifiyla "MAP" ibaresi altin renkte (#dfae4f) ayri
+gosteriliyor; altindaki h1 "Her Şey, Tek Çatı Altında" sloganini tasiyor.
+Mobilde uzun metin `white-space: normal` ile sarilir, tasma olmaz.
 
