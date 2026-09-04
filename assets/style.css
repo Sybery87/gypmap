@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@1,9..144,500&display=swap');
 
 :root {
   --bg: #ffffff;
@@ -95,8 +95,8 @@ html, body {
 }
 .company-map { color: #dfae4f; }
 h1.title {
-  font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 19px;
-  letter-spacing: -.01em; margin: 0; color: var(--ink-deep); white-space: nowrap;
+  font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 20px;
+  letter-spacing: 0; margin: 0; color: var(--ink-deep); white-space: nowrap;
 }
 .hdr-right { display: flex; align-items: center; gap: 22px; flex: none; }
 .stats { display: flex; gap: 24px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--steel); }

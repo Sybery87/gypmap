@@ -372,6 +372,9 @@ Eski depolama-tanki uretim kuyusu simgesi tamamen kaldirildi.
 
 Sekme basligi: "GYP Map". Site basliginda "GÜNEY YILDIZI PETROL" yaninda
 `.company-map` sinifiyla "MAP" ibaresi altin renkte (#dfae4f) ayri
-gosteriliyor; altindaki h1 "Her Şey, Tek Çatı Altında" sloganini tasiyor.
-Mobilde uzun metin `white-space: normal` ile sarilir, tasma olmaz.
+gosteriliyor; altindaki h1 "Her şey, tek çatı altında" sloganini tasiyor.
+
+Slogan cumle bicimi (yalniz ilk harf buyuk) ve Fraunces italic ile yaziliyor -
+kurumsal Manrope basliktan bilerek ayrisan, zarif bir serif. Mobilde uzun
+metin `white-space: normal` ile sarilir, tasma olmaz.
 
