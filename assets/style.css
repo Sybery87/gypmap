@@ -274,6 +274,11 @@ h1.title {
 @keyframes pj-rock { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
 @media (prefers-reduced-motion: reduce) { .pj { animation: none; } }
 
+/* sondaj kulesi: kafes icinde inip cikan hareketli blok (travelling block) */
+.tb { animation: tb-move 2.6s ease-in-out infinite alternate; }
+@keyframes tb-move { from { transform: translateY(0); } to { transform: translateY(9px); } }
+@media (prefers-reduced-motion: reduce) { .tb { animation: none; } }
+
 .ghost-marker { background: none !important; border: none !important; }
 .ghost-dot {
   width: 17px; height: 17px; border-radius: 50%;

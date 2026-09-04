@@ -3,15 +3,18 @@
   "use strict";
 
   var GLYPHS = {
+    // sondaj kulesi (derrick): katmanli kafes, tepede tac blok, ortada
+    // dikey mil, kafes icinde yukari-asagi hareket eden bir blok ("tb")
     rig:
       '<svg viewBox="0 0 24 20" width="20" height="17" aria-hidden="true">' +
-      '<rect class="gl" x="2.9" y="15.05" width="19.2" height="1.9" rx="0.75"/>' +
-      '<path class="gl" d="M8.9,15.05 L12.7,5.85 L16.5,15.05" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>' +
-      '<g class="pj">' +
-      '<rect class="gl" x="3.1" y="4.95" width="19" height="1.9" rx="0.95"/>' +
-      '<path class="gl" d="M3.5,5.9 L3.5,3.35 A2.5,2.5 0 0,0 1.4,6.85 L3.5,6.85 Z"/>' +
-      '<circle class="gl" cx="20.1" cy="5.9" r="2.8"/>' +
-      "</g></svg>",
+      '<rect class="gl" x="2" y="17.3" width="20" height="1.7" rx="0.7"/>' +
+      '<path class="gl" d="M10.4,2.4 L4.1,17.3 M13.6,2.4 L19.9,17.3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+      '<rect class="gl" x="9.7" y="1.3" width="4.6" height="1.7" rx="0.7"/>' +
+      '<path class="gl" d="M10.5,3 L15.6,7.7 M13.5,3 L8.4,7.7 M8.4,7.7 L17.7,12.3 M15.6,7.7 L6.3,12.3 M6.3,12.3 L20,17.3 M17.7,12.3 L4,17.3" stroke="currentColor" stroke-width="0.9" fill="none" stroke-linecap="round"/>' +
+      '<path class="gl" d="M8.4,7.7 L15.6,7.7 M6.3,12.3 L17.7,12.3" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>' +
+      '<path class="gl" d="M12,2.6 L12,17.3" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.6"/>' +
+      '<g class="tb"><rect class="gl" x="10.6" y="5.5" width="2.8" height="2.2" rx="0.6"/></g>' +
+      "</svg>",
     office:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
       '<rect class="gl" x="2.4" y="7" width="7.4" height="11.4" rx="1.3"/>' +
@@ -32,16 +35,16 @@
       '<rect class="void" x="13.2" y="10.6" width="2.6" height="2.4" rx="0.6"/>' +
       '<rect class="void" x="8.6" y="14.4" width="2.6" height="3" rx="0.5"/>' +
       "</svg>",
+    // uretim kuyusu: atbasi (pumpjack) — kirisi "pj" sinifinda sallanir
     production:
       '<svg viewBox="0 0 24 20" width="19" height="16" aria-hidden="true">' +
-      '<rect class="gl" x="2.6" y="5.6" width="8.8" height="12.2" rx="1.5"/>' +
-      '<rect class="gl" x="14.2" y="8.4" width="7.4" height="9.4" rx="1.4"/>' +
-      '<rect class="void" x="4.6" y="8" width="4.8" height="1.5" rx="0.75"/>' +
-      '<rect class="void" x="4.6" y="11.4" width="4.8" height="1.5" rx="0.75"/>' +
-      '<rect class="void" x="16" y="10.8" width="3.8" height="1.4" rx="0.7"/>' +
-      '<path class="gl" d="M11.4,14.8 L14.2,14.8" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
-      '<path class="gl" d="M7,5.6 L7,2.6 L17.9,2.6 L17.9,8.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
-      "</svg>",
+      '<rect class="gl" x="2.9" y="15.05" width="19.2" height="1.9" rx="0.75"/>' +
+      '<path class="gl" d="M8.9,15.05 L12.7,5.85 L16.5,15.05" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>' +
+      '<g class="pj">' +
+      '<rect class="gl" x="3.1" y="4.95" width="19" height="1.9" rx="0.95"/>' +
+      '<path class="gl" d="M3.5,5.9 L3.5,3.35 A2.5,2.5 0 0,0 1.4,6.85 L3.5,6.85 Z"/>' +
+      '<circle class="gl" cx="20.1" cy="5.9" r="2.8"/>' +
+      "</g></svg>",
     // hareket halinde + yon biliniyor: ok (yon acisiyla dondurulur)
     vehicle:
       '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +

@@ -212,9 +212,11 @@
   function makeIcon(kind, s, seed) {
     s = s || iconSize();
     var html = G.GLYPHS[kind];
+    // her isaretci biraz farkli fazda hareket etsin (hepsi ayni anda degil)
+    var d = -((seed || 0) % 5) * 0.48;
     if (kind === "rig") {
-      // her kule biraz farkli fazda hareket etsin
-      var d = -((seed || 0) % 5) * 0.48;
+      html = html.replace('class="tb"', 'class="tb" style="animation-delay:' + d + 's"');
+    } else if (kind === "production") {
       html = html.replace('class="pj"', 'class="pj" style="animation-delay:' + d + 's"');
     }
     return L.divIcon({
@@ -402,15 +404,15 @@
       markers.push(recF);
     });
 
-    (data.productionSites || []).forEach(function (s) {
+    (data.productionSites || []).forEach(function (s, i) {
       var ll = L.latLng(s.lat, s.lon);
-      var mk = L.marker(ll, { icon: makeIcon("production"), riseOnHover: true })
+      var mk = L.marker(ll, { icon: makeIcon("production", null, i), riseOnHover: true })
         .addTo(markerLayer)
         .bindPopup(productionPopupHtml(s), { closeButton: true, autoPanPadding: [30, 30] })
         .bindTooltip(s.name, { permanent: true, direction: "right", offset: [17, 0], className: "gyp-label" });
       var recP = {
         marker: mk, label: s.name, kind: "rig", kindIcon: "production",
-        cat: "production", weight: 20, latlng: ll,
+        cat: "production", weight: 20, latlng: ll, seed: i,
         altBilgi: s.city || "",
       };
       wireMarker(mk, ll, s.name, recP);

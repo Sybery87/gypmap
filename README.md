@@ -346,3 +346,15 @@ Panel ve zaman çizelgesi `z-index: 1100` kullanıyor. Leaflet kontrolleri
 - [ ] Kule/kuyu koordinatlarını sağlayıcıya alan olarak yükleme (yazma yetkisi gerekir,
       servis şu an salt okunur)
 - [ ] Saha ziyaret raporu — yukarıdaki adım tamamlanınca
+
+### Simge degisimi: kule <-> uretim kuyusu
+
+Kule simgesi artik katmanli, X kafesli bir sondaj kulesi (derrick) —
+tepede tac blok, ortada dikey mil, kafes icinde asagi-yukari hareket eden bir
+blok (`.tb` sinifi). Uretim kuyusu simgesi ise onceki kule ikonu olan atbasi
+(pumpjack, `.pj` sinifi, sallanan kiris).
+
+`makeIcon()` her ikisi icin de indekse gore animasyon gecikmesi uyguluyor,
+boylece ayni turdeki tum isaretciler ayni anda hareket etmiyor (5 farkli faz).
+Eski depolama-tanki uretim kuyusu simgesi tamamen kaldirildi.
+
